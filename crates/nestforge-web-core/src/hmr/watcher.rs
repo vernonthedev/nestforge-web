@@ -7,6 +7,7 @@ use tokio::sync::RwLock;
 pub struct FileWatcher {
     watcher: notify::RecommendedWatcher,
     watched_paths: Vec<PathBuf>,
+    #[allow(dead_code)]
     debounce_ms: u64,
 }
 
@@ -114,6 +115,7 @@ pub enum HmrMessage {
 }
 
 pub struct HmrClient {
+    #[allow(dead_code)]
     ws_url: String,
 }
 

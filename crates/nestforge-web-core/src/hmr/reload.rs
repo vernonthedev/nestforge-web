@@ -45,6 +45,7 @@ impl Default for ModuleReloader {
 }
 
 pub struct HotReloader {
+    #[allow(dead_code)]
     reloader: ModuleReloader,
     routes: Vec<Route>,
 }

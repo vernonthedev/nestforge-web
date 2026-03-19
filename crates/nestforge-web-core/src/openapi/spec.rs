@@ -155,7 +155,7 @@ pub struct HeaderObject {
     pub schema: SchemaObject,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct SchemaObject {
     #[serde(rename = "type")]
     pub schema_type: Option<String>,
@@ -245,26 +245,6 @@ impl SchemaObject {
     pub fn with_format(mut self, format: &str) -> Self {
         self.format = Some(format.to_string());
         self
-    }
-}
-
-impl Default for SchemaObject {
-    fn default() -> Self {
-        Self {
-            schema_type: None,
-            format: None,
-            properties: None,
-            items: None,
-            required: None,
-            description: None,
-            example: None,
-            nullable: false,
-            deprecated: false,
-            enum_values: None,
-            default: None,
-            minimum: None,
-            maximum: None,
-        }
     }
 }
 

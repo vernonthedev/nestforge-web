@@ -322,9 +322,7 @@ impl RouteToOpenApiConverter {
     }
 
     fn infer_schemas(&self) -> Vec<(String, SchemaObject)> {
-        let mut schemas = Vec::new();
-
-        schemas.push((
+        vec![(
             "Error".to_string(),
             SchemaObject::object(
                 vec![
@@ -334,8 +332,6 @@ impl RouteToOpenApiConverter {
                 .into_iter()
                 .collect(),
             ),
-        ));
-
-        schemas
+        )]
     }
 }

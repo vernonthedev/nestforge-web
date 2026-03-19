@@ -19,7 +19,7 @@ impl SwaggerUi {
         Self { spec }
     }
 
-    pub fn into_router(self, config: NestForgeWebConfig) -> Router {
+    pub fn into_router(self, _config: NestForgeWebConfig) -> Router {
         let spec = Arc::new(self.spec);
 
         Router::new()
@@ -97,7 +97,7 @@ impl Redoc {
         Self { spec }
     }
 
-    pub fn into_router(self, config: NestForgeWebConfig) -> Router {
+    pub fn into_router(self, _config: NestForgeWebConfig) -> Router {
         let spec = Arc::new(self.spec);
 
         Router::new()
@@ -108,7 +108,7 @@ impl Redoc {
 }
 
 async fn redoc_handler() -> Html<String> {
-    Html(format!(
+    Html(
         r#"<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -122,5 +122,6 @@ async fn redoc_handler() -> Html<String> {
     <script src="https://unpkg.com/redoc@latest/bundles/redoc.standalone.js"></script>
 </body>
 </html>"#
-    ))
+            .to_string(),
+    )
 }

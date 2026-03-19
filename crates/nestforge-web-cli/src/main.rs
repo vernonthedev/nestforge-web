@@ -1,7 +1,7 @@
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 use std::env;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 #[derive(Parser)]
@@ -99,7 +99,7 @@ fn init_git_repo(project_dir: &PathBuf) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn new_project(name: &str, path: &PathBuf) -> Result<()> {
+fn new_project(name: &str, path: &Path) -> Result<()> {
     let project_dir = path.join(name);
     std::fs::create_dir_all(&project_dir)?;
 

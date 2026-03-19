@@ -157,11 +157,10 @@ export class ApiClient {
                 output.push_str(" }, ");
             }
 
-            if endpoint.request_type.is_some() {
-                output.push_str(&format!(
-                    "body: {}, ",
-                    endpoint.request_type.as_ref().unwrap().name
-                ));
+            if let Some(ref req_type) = endpoint.request_type {
+                output.push_str("body: ");
+                output.push_str(&req_type.name);
+                output.push_str(", ");
             }
 
             output.push_str("}): Promise<");
@@ -263,9 +262,7 @@ export class ApiError extends Error {
                 return_type
             ));
 
-            output.push_str(&format!(
-                "        let url = format!(\"{{}}{{}}\", self.base_url, path);\n"
-            ));
+            output.push_str("        let url = format!(\"{}{}\", self.base_url, path);\n");
             output.push_str(&format!(
                 "        let mut req = self.client.{}(&url);\n",
                 http_method
@@ -356,5 +353,5 @@ fn to_snake_case(s: &str) -> String {
         }
         result.push(c.to_ascii_lowercase());
     }
-    result.replace('-', "_").replace('/', "_")
+    result.replace(['-', '/'], "_")
 }
