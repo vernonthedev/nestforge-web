@@ -75,7 +75,7 @@ fn new_project(name: &str, path: &PathBuf) -> Result<()> {
         format!(r#"export const config = {{
   name: "{}",
   appDir: "./src/app",
-  nestforgeDir: "./src/nestforge",
+  backendDir: "./src/backend",
   port: 3000,
   host: "127.0.0.1",
 }};
@@ -85,7 +85,7 @@ export default config;
     )?;
     
     std::fs::create_dir_all(project_dir.join("src/app"))?;
-    std::fs::create_dir_all(project_dir.join("src/nestforge"))?;
+    std::fs::create_dir_all(project_dir.join("src/backend"))?;
     std::fs::create_dir_all(project_dir.join("src/components"))?;
     std::fs::create_dir_all(project_dir.join("src/lib"))?;
     
@@ -170,7 +170,7 @@ pub use config::NestForgeWebConfig;
 pub struct NestForgeWebConfig {
     pub app_name: String,
     pub app_dir: String,
-    pub nestforge_dir: String,
+    pub backend_dir: String,
     pub port: u16,
     pub host: String,
 }
@@ -180,7 +180,7 @@ impl Default for NestForgeWebConfig {
         Self {
             app_name: "nestforge-app".to_string(),
             app_dir: "src/app".to_string(),
-            nestforge_dir: "src/nestforge".to_string(),
+            backend_dir: "src/backend".to_string(),
             port: 3000,
             host: "127.0.0.1".to_string(),
         }
@@ -199,7 +199,7 @@ async fn dev_server(app_dir: PathBuf, port: u16) -> Result<()> {
     let config = NestForgeWebConfig {
         app_name: "nestforge-dev".to_string(),
         app_dir: app_dir.to_string_lossy().to_string(),
-        nestforge_dir: "src/nestforge".to_string(),
+        backend_dir: "src/backend".to_string(),
         port,
         host: "127.0.0.1".to_string(),
     };

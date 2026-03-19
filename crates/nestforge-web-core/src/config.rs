@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 pub struct NestForgeWebConfig {
     pub app_name: String,
     pub app_dir: String,
-    pub nestforge_dir: String,
+    pub backend_dir: String,
     pub port: u16,
     pub host: String,
 }
@@ -14,7 +14,7 @@ impl Default for NestForgeWebConfig {
         Self {
             app_name: "nestforge-app".to_string(),
             app_dir: "src/app".to_string(),
-            nestforge_dir: "src/nestforge".to_string(),
+            backend_dir: "src/backend".to_string(),
             port: 3000,
             host: "127.0.0.1".to_string(),
         }

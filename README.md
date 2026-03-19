@@ -67,7 +67,7 @@ my-app/
 │   │   │       └── route.ts    # /api/users
 │   │   └── layout.tsx          # Root layout
 │   ├── components/            # Shared React components
-│   ├── nestforge/             # NestForge modules
+│   ├── backend/              # NestForge backend modules
 │   │   ├── app_module.rs      # Root module
 │   │   ├── users/
 │   │   │   ├── mod.rs
@@ -78,7 +78,7 @@ my-app/
 │   │       ├── posts_controller.rs
 │   │       └── posts_service.rs
 │   └── lib/
-│       └── nestforge.rs       # Bridge between layers
+│       └── bridge.rs       # Bridge between frontend/backend
 ├── nestforge-web.config.ts    # Framework configuration
 └── Cargo.toml
 ```

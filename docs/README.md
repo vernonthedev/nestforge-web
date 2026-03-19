@@ -29,7 +29,7 @@ my-app/
 ├── src/
 │   ├── app/           # Frontend pages & API routes
 │   ├── components/    # React components
-│   ├── nestforge/     # Rust backend modules
+│   ├── backend/       # Rust backend modules (NestForge)
 │   └── lib/           # Shared utilities
 ├── Cargo.toml
 └── nestforge-web.config.ts
@@ -75,7 +75,7 @@ src/app/api/
 ### NestForge Modules
 
 ```rust
-// src/nestforge/users/mod.rs
+// src/backend/users/mod.rs
 #[nestforge::module]
 pub mod users {
     #[nestforge::controller("/api/users")]
@@ -107,7 +107,7 @@ pub mod users {
 export const config = {
   name: "my-app",
   appDir: "./src/app",
-  nestforgeDir: "./src/nestforge",
+  backendDir: "./src/backend",
   port: 3000,
   host: "127.0.0.1",
 };
@@ -120,7 +120,7 @@ export const config = {
 │           NestForge Web               │
 ├─────────────┬────────────────────────┤
 │  Frontend   │       Backend          │
-│  (React)    │     (NestForge)        │
+│  (React)    │     (NestForge)       │
 ├─────────────┴────────────────────────┤
 │         HTTP Server (Axum)           │
 ├──────────────────────────────────────┤
