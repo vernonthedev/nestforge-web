@@ -11,9 +11,7 @@
 
 # NestForge Web
 
-A blazing-fast fullstack framework combining NestForge's high-performance Rust backend with a Next.js-inspired frontend serving layer...
-
-## Badges
+A blazing-fast fullstack framework combining NestForge's high-performance Rust backend with a Next.js-inspired frontend serving layer.
 
 ![crates.io](https://img.shields.io/crates/v/nestforge-web)
 ![docs.rs](https://img.shields.io/docsrs/nestforge-web)
