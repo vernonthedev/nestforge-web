@@ -1,0 +1,27 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/nestforge-web",
+    "crates/nestforge-web-core",
+    "crates/nestforge-web-cli",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["VernonTheDev <vernon@nestforge.dev>"]
+license = "Apache-2.0"
+repository = "https://github.com/vernonthedev/nestforge-web"
+homepage = "https://nestforge.dev"
+description = "Blazing fast fullstack framework powered by NestForge"
+rust-version = "1.75"
+
+[workspace.dependencies]
+tokio = { version = "1.36", features = ["full"] }
+axum = "0.7"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+anyhow = "1.0"
+clap = { version = "4.5", features = ["derive"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }

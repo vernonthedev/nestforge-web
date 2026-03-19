@@ -1,0 +1,16 @@
+[package]
+name = "nestforge-web"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+description.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+nestforge-web-core = { path = "../nestforge-web-core" }
+
+[features]
+default = []

@@ -1,0 +1,22 @@
+[package]
+name = "nestforge-web-cli"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+description.workspace = true
+rust-version.workspace = true
+
+[[bin]]
+name = "nestforge-web"
+path = "src/main.rs"
+
+[dependencies]
+nestforge-web-core = { path = "../nestforge-web-core" }
+tokio.workspace = true
+clap.workspace = true
+anyhow.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
