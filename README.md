@@ -94,14 +94,6 @@ my-app/
 └── Cargo.toml
 ```
 
-## Implementation Plan
-
-### Phase 4: Developer Experience
-
-- [x] Hot module replacement (HMR) integration
-- [x] Type-safe API with generated types
-- [x] OpenAPI docs auto-generation
-
 ## Tech Stack
 
 | Layer | Technology |
