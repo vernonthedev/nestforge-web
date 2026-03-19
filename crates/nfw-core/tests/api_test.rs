@@ -2,8 +2,8 @@
 
 #[cfg(test)]
 mod tests {
-    use nestforge_web_core::api::{ApiError, ApiGenerator, FieldSpec, PaginatedResponse, TypeSpec};
-    use nestforge_web_core::routing::{Route, RouteMethod};
+    use nfw_core::api::{ApiError, ApiGenerator, FieldSpec, PaginatedResponse, TypeSpec};
+    use nfw_core::routing::{Route, RouteMethod};
 
     #[test]
     fn test_api_error_new() {

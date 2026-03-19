@@ -10,7 +10,7 @@ description.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-nestforge-web-core = { path = "../nestforge-web-core" }
+nfw-core = { path = "../nfw-core" }
 
 [features]
 default = []

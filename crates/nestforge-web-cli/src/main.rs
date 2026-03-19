@@ -435,7 +435,7 @@ async fn dev_server(
     port: Option<u16>,
     host_cli: Option<String>,
 ) -> Result<()> {
-    use nestforge_web_core::{NestForgeWebApp, NestForgeWebConfig};
+    use nfw_core::{NestForgeWebApp, NestForgeWebConfig};
 
     dotenvy::dotenv().ok();
 
@@ -482,7 +482,7 @@ fn build_project(app_dir: Option<PathBuf>) -> Result<()> {
 }
 
 async fn start_server(port: Option<u16>, host_cli: Option<String>) -> Result<()> {
-    use nestforge_web_core::{NestForgeWebApp, NestForgeWebConfig};
+    use nfw_core::{NestForgeWebApp, NestForgeWebConfig};
 
     dotenvy::dotenv().ok();
 

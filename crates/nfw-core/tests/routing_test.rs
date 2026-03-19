@@ -2,7 +2,7 @@
 
 #[cfg(test)]
 mod tests {
-    use nestforge_web_core::routing::{Route, RouteMethod, RouteScanner, RouteSegment};
+    use nfw_core::routing::{Route, RouteMethod, RouteScanner, RouteSegment};
 
     #[test]
     fn test_route_method_as_str() {

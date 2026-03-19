@@ -93,15 +93,15 @@ jobs:
         run: |
           VERSION="${{ steps.analyze.outputs.new_version }}"
           sed -i 's/^version = ".*"/version = "'"$VERSION"'"/' Cargo.toml
-          for f in crates/nestforge-web-core/Cargo.toml crates/nestforge-web/Cargo.toml crates/nestforge-web-cli/Cargo.toml; do
+          for f in crates/nfw-core/Cargo.toml crates/nestforge-web/Cargo.toml crates/nestforge-web-cli/Cargo.toml; do
             sed -i 's/^version\.workspace = true$/version = "'"$VERSION"'"/' "$f"
           done
 
       - name: Replace path deps with version deps
         run: |
           VERSION="${{ steps.analyze.outputs.new_version }}"
-          sed -i 's|nestforge-web-core = { path = "../nestforge-web-core" }|nestforge-web-core = "'"$VERSION"'"|g' crates/nestforge-web/Cargo.toml
-          sed -i 's|nestforge-web-core = { path = "../nestforge-web-core" }|nestforge-web-core = "'"$VERSION"'"|g' crates/nestforge-web-cli/Cargo.toml
+          sed -i 's|nfw-core = { path = "../nfw-core" }|nfw-core = "'"$VERSION"'"|g' crates/nestforge-web/Cargo.toml
+          sed -i 's|nfw-core = { path = "../nfw-core" }|nfw-core = "'"$VERSION"'"|g' crates/nestforge-web-cli/Cargo.toml
 
       - name: Commit version bump
         run: |
@@ -113,9 +113,9 @@ jobs:
           git push origin HEAD:main
           git push origin "v${{ steps.analyze.outputs.new_version }}"
 
-      - name: Publish nestforge-web-core
+      - name: Publish nfw-core
         run: |
-          cargo publish -p nestforge-web-core
+          cargo publish -p nfw-core
 
       - name: Wait before next publish
         run: sleep 15

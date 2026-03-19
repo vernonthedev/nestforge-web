@@ -1,5 +1,5 @@
 [package]
-name = "nestforge-web-core"
+name = "nfw-core"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true

@@ -2,7 +2,7 @@
 resolver = "2"
 members = [
     "crates/nestforge-web",
-    "crates/nestforge-web-core",
+    "crates/nfw-core",
     "crates/nestforge-web-cli",
 ]
 

@@ -2,16 +2,16 @@
 
 #[cfg(test)]
 mod tests {
-    use nestforge_web_core::openapi::{
+    use nfw_core::openapi::{
         MediaTypeObject, OpenApiGenerator, OperationObject, ParameterLocation, ParameterObject,
         ResponseObject, SchemaObject,
     };
-    use nestforge_web_core::routing::{Route, RouteMethod, RouteSegment};
+    use nfw_core::routing::{Route, RouteMethod, RouteSegment};
     use std::collections::HashMap;
 
     #[test]
     fn test_openapi_spec_default() {
-        let spec = nestforge_web_core::openapi::spec::OpenApiSpec::default();
+        let spec = nfw_core::openapi::spec::OpenApiSpec::default();
 
         assert_eq!(spec.openapi, "3.1.0");
         assert_eq!(spec.info.title, "NestForge Web API");
@@ -262,7 +262,7 @@ mod tests {
 
     #[test]
     fn test_security_scheme_bearer() {
-        let scheme = nestforge_web_core::openapi::spec::SecuritySchemeObject::bearer();
+        let scheme = nfw_core::openapi::spec::SecuritySchemeObject::bearer();
 
         assert_eq!(scheme.scheme_type, "http");
         assert_eq!(scheme.scheme, Some("bearer".to_string()));
@@ -272,7 +272,7 @@ mod tests {
     #[test]
     fn test_security_scheme_api_key() {
         let scheme =
-            nestforge_web_core::openapi::spec::SecuritySchemeObject::api_key("X-API-Key", "header");
+            nfw_core::openapi::spec::SecuritySchemeObject::api_key("X-API-Key", "header");
 
         assert_eq!(scheme.scheme_type, "apiKey");
         assert_eq!(scheme.name, Some("X-API-Key".to_string()));

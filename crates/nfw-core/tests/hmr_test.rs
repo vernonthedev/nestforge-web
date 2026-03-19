@@ -2,11 +2,11 @@
 
 #[cfg(test)]
 mod tests {
-    use nestforge_web_core::hmr::{
+    use nfw_core::hmr::{
         reload::{HotReloader, ModuleReloader, ModuleState},
         watcher::{ChangedFile, FileChangeKind, FileWatcher, HmrMessage, HmrServer},
     };
-    use nestforge_web_core::routing::{Route, RouteMethod};
+    use nfw_core::routing::{Route, RouteMethod};
     use std::path::PathBuf;
 
     #[test]

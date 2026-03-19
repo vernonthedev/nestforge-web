@@ -25,7 +25,7 @@ mod tests {
         reset_all_env_vars();
         set_default_env_vars();
 
-        let config = nestforge_web_core::config::NestForgeWebConfig::default();
+        let config = nfw_core::config::NestForgeWebConfig::default();
 
         assert_eq!(config.port, 3000);
         assert_eq!(config.http_port, 3001);
@@ -45,7 +45,7 @@ mod tests {
         std::env::set_var("APP_DIR", "custom/app");
         std::env::set_var("BACKEND_DIR", "custom/backend");
 
-        let config = nestforge_web_core::config::NestForgeWebConfig::from_env();
+        let config = nfw_core::config::NestForgeWebConfig::from_env();
 
         assert_eq!(config.port, 8080);
         assert_eq!(config.http_port, 8081);
@@ -60,7 +60,7 @@ mod tests {
         reset_all_env_vars();
         set_default_env_vars();
 
-        let config = nestforge_web_core::config::NestForgeWebConfig::default().with_port(9000);
+        let config = nfw_core::config::NestForgeWebConfig::default().with_port(9000);
         assert_eq!(config.port, 9000);
     }
 
@@ -70,7 +70,7 @@ mod tests {
         set_default_env_vars();
 
         let config =
-            nestforge_web_core::config::NestForgeWebConfig::default().with_host("192.168.1.1");
+            nfw_core::config::NestForgeWebConfig::default().with_host("192.168.1.1");
         assert_eq!(config.host, "192.168.1.1");
     }
 
@@ -79,7 +79,7 @@ mod tests {
         reset_all_env_vars();
         set_default_env_vars();
 
-        let config = nestforge_web_core::config::NestForgeWebConfig::default();
+        let config = nfw_core::config::NestForgeWebConfig::default();
         let cloned = config.clone();
 
         assert_eq!(config.port, cloned.port);
@@ -94,7 +94,7 @@ mod tests {
         set_default_env_vars();
         std::env::set_var("PORT", "invalid");
 
-        let config = nestforge_web_core::config::NestForgeWebConfig::default();
+        let config = nfw_core::config::NestForgeWebConfig::default();
         assert_eq!(config.port, 3000);
     }
 
@@ -104,7 +104,7 @@ mod tests {
         set_default_env_vars();
         std::env::set_var("HTTP_PORT", "invalid");
 
-        let config = nestforge_web_core::config::NestForgeWebConfig::default();
+        let config = nfw_core::config::NestForgeWebConfig::default();
         assert_eq!(config.http_port, 3001);
     }
 }
