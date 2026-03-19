@@ -9,7 +9,7 @@
 
 ```
 
-# NestForge Web Framework
+# NestForge - Web Framework
 
 A blazing-fast fullstack framework combining NestForge's high-performance Rust backend with a Next.js-inspired frontend serving layer.
 
