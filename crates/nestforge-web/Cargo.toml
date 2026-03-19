@@ -1,6 +1,6 @@
 [package]
 name = "nestforge-web"
-version.workspace = true
+version = "0.1.0"
 edition.workspace = true
 authors.workspace = true
 license.workspace = true
@@ -10,7 +10,7 @@ description.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-nfw-core = { path = "../nfw-core" }
+nfw-core = "0.1.0"
 
 [features]
 default = []

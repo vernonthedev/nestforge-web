@@ -1,6 +1,6 @@
 [package]
 name = "nestforge-web-cli"
-version.workspace = true
+version = "0.1.0"
 edition.workspace = true
 authors.workspace = true
 license.workspace = true
@@ -14,7 +14,7 @@ name = "nestforge-web"
 path = "src/main.rs"
 
 [dependencies]
-nfw-core = { path = "../nfw-core" }
+nfw-core = "0.1.0"
 tokio.workspace = true
 clap.workspace = true
 anyhow.workspace = true
