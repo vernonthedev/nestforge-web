@@ -87,9 +87,9 @@ jobs:
         run: |
           VERSION="${{ steps.analyze.outputs.new_version }}"
           
-          # For nestforge-web: replace path with version
-          sed -i 's|nestforge-web-core = { path = "../nestforge-web-core" }|nestforge-web-core = "'"$VERSION"'" }|' crates/nestforge-web/Cargo.toml
-          sed -i 's|nestforge-web-core = { path = "../nestforge-web-core" }|nestforge-web-core = "'"$VERSION"'" }|' crates/nestforge-web-cli/Cargo.toml
+          # For nestforge-web: replace path with version (remove the closing })
+          sed -i 's|nestforge-web-core = { path = "../nestforge-web-core" }|nestforge-web-core = "'"$VERSION"'"|' crates/nestforge-web/Cargo.toml
+          sed -i 's|nestforge-web-core = { path = "../nestforge-web-core" }|nestforge-web-core = "'"$VERSION"'"|' crates/nestforge-web-cli/Cargo.toml
 
       - name: Show updated files
         run: |
