@@ -98,10 +98,9 @@ my-app/
 
 ### Phase 4: Developer Experience
 
-- [ ] Hot module replacement (HMR) integration
-- [ ] Type-safe API with generated types
-- [ ] OpenAPI docs auto-generation
-- [ ] VS Code extension integration
+- [x] Hot module replacement (HMR) integration
+- [x] Type-safe API with generated types
+- [x] OpenAPI docs auto-generation
 
 ## Tech Stack
 
