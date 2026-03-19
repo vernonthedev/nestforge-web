@@ -135,6 +135,6 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           draft: false
-          tag: v${{ steps.analyze.outputs.new_version }}
+          tag_name: v${{ steps.analyze.outputs.new_version }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
