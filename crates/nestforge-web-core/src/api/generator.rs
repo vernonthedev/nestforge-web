@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::path::Path;
 
 use crate::routing::Route;
@@ -245,7 +244,7 @@ export class ApiError extends Error {
             let return_type = endpoint
                 .response_type
                 .as_ref()
-                .map(|t| "serde_json::Value".to_string())
+                .map(|_t| "serde_json::Value".to_string())
                 .unwrap_or_else(|| "()".to_string());
 
             output.push_str(&format!(

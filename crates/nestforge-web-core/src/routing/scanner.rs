@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 use regex::Regex;
 use once_cell::sync::Lazy;
 
-use crate::routing::{Route, RouteMethod};
+use crate::routing::{Route, RouteMethod, RouteSegment};
 
 static DYNAMIC_SEGMENT_REGEX: Lazy<Regex> = Lazy::new(|| {
     Regex::new(r"^\[(.+?)\]$").unwrap()
@@ -16,13 +16,7 @@ static OPTIONAL_CATCH_ALL_REGEX: Lazy<Regex> = Lazy::new(|| {
     Regex::new(r"^\[\[(.+?)\]\]$").unwrap()
 });
 
-#[derive(Debug, Clone)]
-pub enum RouteSegment {
-    Static(String),
-    Dynamic(String),
-    CatchAll(String),
-    OptionalCatchAll(String),
-}
+
 
 pub struct RouteScanner {
     base_path: PathBuf,
@@ -40,7 +34,7 @@ impl RouteScanner {
         let base_path = Path::new(&self.base_path);
         
         if !base_path.exists() {
-            tracing::info!("App directory does not exist, creating: {}", self.base_path);
+            tracing::info!("App directory does not exist, creating: {}", self.base_path.display());
             std::fs::create_dir_all(base_path)?;
         }
         
@@ -219,14 +213,21 @@ impl RouteScanner {
         Ok(())
     }
 
-    fn parse_segment(&self, name: &str) -> Option<RouteSegment> {
+    pub fn parse_segment(&self, name: &str) -> Option<RouteSegment> {
+        if name.is_empty() {
+            return None;
+        }
         if name.starts_with('[') && name.ends_with(']') {
             if name.starts_with("[[") && name.ends_with("]]") {
                 let inner = &name[2..name.len()-2];
-                Some(RouteSegment::OptionalCatchAll(inner.to_string()))
-            } else if name.starts_with("...") {
-                let inner = &name[3..name.len()-1];
-                Some(RouteSegment::CatchAll(inner.to_string()))
+                if inner.starts_with("...") {
+                    Some(RouteSegment::OptionalCatchAll(inner[3..].to_string()))
+                } else {
+                    Some(RouteSegment::Dynamic(inner.to_string()))
+                }
+            } else if name.contains("...") {
+                let inner = &name[1..name.len()-1];
+                Some(RouteSegment::CatchAll(inner[3..].to_string()))
             } else {
                 let inner = &name[1..name.len()-1];
                 Some(RouteSegment::Dynamic(inner.to_string()))
@@ -236,27 +237,42 @@ impl RouteScanner {
         }
     }
 
-    fn build_path(&self, prefix: &str, segments: &[RouteSegment]) -> String {
-        let mut path = if prefix.is_empty() { String::from("/") } else { prefix.to_string() };
+    pub fn build_path(&self, prefix: &str, segments: &[RouteSegment]) -> String {
+        let mut path = prefix.to_string();
         
         for segment in segments {
+            if !path.ends_with('/') {
+                path.push('/');
+            }
             match segment {
-                RouteSegment::Static(s) => path = format!("{}/{}", path, s),
-                RouteSegment::Dynamic(s) => path = format!("{}/{{{}}}", path, s),
-                RouteSegment::CatchAll(s) => path = format!("{}/{{{}}}", path, s),
-                RouteSegment::OptionalCatchAll(s) => path = format!("{}/{{{}}}", path, s),
+                RouteSegment::Static(s) => path.push_str(s),
+                RouteSegment::Dynamic(s) => {
+                    path.push('{');
+                    path.push_str(s);
+                    path.push('}');
+                }
+                RouteSegment::CatchAll(s) => {
+                    path.push('{');
+                    path.push_str(s);
+                    path.push('}');
+                }
+                RouteSegment::OptionalCatchAll(s) => {
+                    path.push('{');
+                    path.push_str(s);
+                    path.push('}');
+                }
             }
         }
         
-        if path != "/" && path.ends_with('/') {
-            path.pop();
+        if path.is_empty() {
+            path.push('/');
         }
-        
+
         path
     }
 
-    fn sanitize_name(&self, path: &str) -> String {
-        path.replace('/', "_")
+    pub fn sanitize_name(&self, path: &str) -> String {
+        path.replace('/', "")
             .replace('-', "_")
             .replace('[', "")
             .replace(']', "")

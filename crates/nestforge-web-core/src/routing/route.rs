@@ -1,6 +1,12 @@
 use serde::{Deserialize, Serialize};
 
-use super::scanner::RouteSegment;
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum RouteSegment {
+    Static(String),
+    Dynamic(String),
+    CatchAll(String),
+    OptionalCatchAll(String),
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Route {

@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use crate::routing::Route;
 
 pub struct ModuleReloader {

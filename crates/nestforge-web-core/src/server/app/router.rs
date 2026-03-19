@@ -1,12 +1,9 @@
 use axum::{
-    extract::{Path as AxumPath, Query, State},
-    http::StatusCode,
+    extract::State,
     response::{Html, IntoResponse, Response},
     routing::get,
     Router,
 };
-use std::collections::HashMap;
-use std::sync::Arc;
 
 use crate::config::NestForgeWebConfig;
 use crate::routing::RouteScanner;
@@ -33,37 +30,16 @@ impl NestForgeWebApp {
         let routes = scanner.scan().await?;
         let renderer = Renderer::new(std::path::PathBuf::from(&self.config.app_dir));
 
-        let state = Arc::new(AppState {
+        let state = AppState {
             config: self.config.clone(),
-            routes: routes.clone(),
+            routes,
             renderer,
-        });
+        };
 
-        let mut app = Router::new()
+        let app = Router::new()
             .route("/health", get(health_handler))
-            .with_state(state.clone());
-
-        for route in routes {
-            if route.method == crate::routing::RouteMethod::Get {
-                let route_path = route.path.clone();
-                let page_path = route.file_path.clone();
-                
-                let state_clone = state.clone();
-                app = app.route(
-                    &route_path,
-                    get(move |path: AxumPath<String>, query: Query<HashMap<String, String>>| {
-                        let state = state_clone.clone();
-                        async move {
-                            page_handler(state, path.0, query.0).await
-                        }
-                    }),
-                );
-            }
-        }
-
-        if !app.routes().iter().any(|r| r.path == "/") {
-            app = app.route("/", get(root_handler));
-        }
+            .route("/", get(root_handler))
+            .with_state(state);
 
         Ok(app)
     }
@@ -86,43 +62,7 @@ async fn health_handler() -> &'static str {
     "healthy"
 }
 
-async fn page_handler(
-    state: Arc<AppState>,
-    path: String,
-    search_params: HashMap<String, String>,
-) -> Response {
-    let route_path = if path.is_empty() || path == "/" {
-        "/".to_string()
-    } else {
-        format!("/{}", path)
-    };
-
-    let route = state.routes.iter().find(|r| {
-        r.method == crate::routing::RouteMethod::Get && r.path == route_path
-    });
-
-    match route {
-        Some(route) => {
-            let props = PageProps {
-                params: HashMap::new(),
-                search_params: search_params.into_iter().map(|(k, v)| (k, vec![v])).collect(),
-            };
-
-            match state.renderer.render(&route.file_path, props).await {
-                Ok(html) => Html(html).into_response(),
-                Err(e) => {
-                    tracing::error!("Failed to render page: {}", e);
-                    (StatusCode::INTERNAL_SERVER_ERROR, format!("Render error: {}", e)).into_response()
-                }
-            }
-        }
-        None => {
-            (StatusCode::NOT_FOUND, "Page not found").into_response()
-        }
-    }
-}
-
-async fn root_handler(state: State<Arc<AppState>>) -> Response {
+async fn root_handler(State(state): State<AppState>) -> Response {
     let page_props = PageProps::default();
 
     match state.renderer.get_layout_for_path("/") {

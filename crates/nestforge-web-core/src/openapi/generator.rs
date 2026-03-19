@@ -2,9 +2,8 @@ use std::collections::HashMap;
 use std::path::Path;
 
 use crate::openapi::spec::{
-    ComponentsObject, MediaTypeObject, OpenApiSpec, OperationObject, ParameterLocation,
-    ParameterObject, PathItem, RequestBodyObject, ResponseObject, SchemaObject, ServerObject,
-    TagObject,
+    MediaTypeObject, OpenApiSpec, OperationObject, ParameterLocation, ParameterObject,
+    RequestBodyObject, ResponseObject, SchemaObject, ServerObject, TagObject,
 };
 use crate::routing::Route;
 
@@ -65,8 +64,10 @@ impl OpenApiGenerator {
     }
 
     pub fn add_route(&mut self, route: &Route) {
-        let path_item = self.spec.paths.entry(route.path.clone()).or_default();
+        let path = route.path.clone();
         let operation = self.create_operation(route);
+
+        let path_item = self.spec.paths.entry(path).or_default();
 
         match route.method.as_str() {
             "GET" => path_item.get = Some(operation),
@@ -313,8 +314,6 @@ impl RouteToOpenApiConverter {
     }
 
     pub fn convert(mut self) -> OpenApiSpec {
-        let spec = self.generator.build();
-
         for (name, schema) in self.infer_schemas() {
             self.generator.add_schema(&name, schema);
         }

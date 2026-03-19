@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ApiResponse<T = serde_json::Value> {
@@ -36,6 +35,14 @@ impl<T> PaginatedResponse<T> {
             total_pages,
         }
     }
+
+    pub fn has_next(&self) -> bool {
+        self.page < self.total_pages
+    }
+
+    pub fn has_prev(&self) -> bool {
+        self.page > 1
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -69,5 +76,16 @@ impl ApiError {
 
     pub fn internal(message: &str) -> Self {
         Self::new("INTERNAL_ERROR", message)
+    }
+
+    pub fn with_details(mut self, details: serde_json::Value) -> Self {
+        self.details = Some(details);
+        self
+    }
+}
+
+impl std::fmt::Display for ApiError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "[{}] {}", self.code, self.message)
     }
 }
