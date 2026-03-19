@@ -2,18 +2,20 @@
 
 #[cfg(test)]
 mod tests {
-    use nestforge_web_core::config::NestForgeWebConfig;
-
-    #[test]
-    fn test_config_default_values() {
+    fn set_all_env_vars() {
         std::env::set_var("PORT", "3000");
         std::env::set_var("HTTP_PORT", "3001");
         std::env::set_var("HOST", "127.0.0.1");
         std::env::set_var("APP_NAME", "nestforge-app");
         std::env::set_var("APP_DIR", "src/app");
         std::env::set_var("BACKEND_DIR", "src/backend");
+    }
 
-        let config = NestForgeWebConfig::default();
+    #[test]
+    fn test_config_default_values() {
+        set_all_env_vars();
+
+        let config = nestforge_web_core::config::NestForgeWebConfig::default();
 
         assert_eq!(config.port, 3000);
         assert_eq!(config.http_port, 3001);
@@ -32,7 +34,7 @@ mod tests {
         std::env::set_var("APP_DIR", "custom/app");
         std::env::set_var("BACKEND_DIR", "custom/backend");
 
-        let config = NestForgeWebConfig::from_env();
+        let config = nestforge_web_core::config::NestForgeWebConfig::from_env();
 
         assert_eq!(config.port, 8080);
         assert_eq!(config.http_port, 8081);
@@ -44,27 +46,26 @@ mod tests {
 
     #[test]
     fn test_config_with_port() {
-        std::env::set_var("PORT", "3000");
+        set_all_env_vars();
 
-        let config = NestForgeWebConfig::default().with_port(9000);
+        let config = nestforge_web_core::config::NestForgeWebConfig::default().with_port(9000);
         assert_eq!(config.port, 9000);
     }
 
     #[test]
     fn test_config_with_host() {
-        std::env::set_var("HOST", "127.0.0.1");
+        set_all_env_vars();
 
-        let config = NestForgeWebConfig::default().with_host("192.168.1.1");
+        let config =
+            nestforge_web_core::config::NestForgeWebConfig::default().with_host("192.168.1.1");
         assert_eq!(config.host, "192.168.1.1");
     }
 
     #[test]
     fn test_config_clone() {
-        std::env::set_var("PORT", "3000");
-        std::env::set_var("HTTP_PORT", "3001");
-        std::env::set_var("HOST", "127.0.0.1");
+        set_all_env_vars();
 
-        let config = NestForgeWebConfig::default();
+        let config = nestforge_web_core::config::NestForgeWebConfig::default();
         let cloned = config.clone();
 
         assert_eq!(config.port, cloned.port);
@@ -75,17 +76,19 @@ mod tests {
 
     #[test]
     fn test_config_invalid_port_fallback() {
+        set_all_env_vars();
         std::env::set_var("PORT", "invalid");
 
-        let config = NestForgeWebConfig::default();
-        assert_eq!(config.port, 3000); // Should fallback to default
+        let config = nestforge_web_core::config::NestForgeWebConfig::default();
+        assert_eq!(config.port, 3000);
     }
 
     #[test]
     fn test_config_invalid_http_port_fallback() {
+        set_all_env_vars();
         std::env::set_var("HTTP_PORT", "invalid");
 
-        let config = NestForgeWebConfig::default();
-        assert_eq!(config.http_port, 3001); // Should fallback to default
+        let config = nestforge_web_core::config::NestForgeWebConfig::default();
+        assert_eq!(config.http_port, 3001);
     }
 }

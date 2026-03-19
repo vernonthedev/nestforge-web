@@ -78,10 +78,12 @@ jobs:
       - name: Update workspace version
         run: |
           VERSION="${{ steps.analyze.outputs.new_version }}"
+          # Update root Cargo.toml
           sed -i 's/^version = ".*"/version = "'"$VERSION"'"/' Cargo.toml
-          sed -i 's/^version = ".*"/version = "'"$VERSION"'"/' crates/nestforge-web-core/Cargo.toml
-          sed -i 's/^version = ".*"/version = "'"$VERSION"'"/' crates/nestforge-web/Cargo.toml
-          sed -i 's/^version = ".*"/version = "'"$VERSION"'"/' crates/nestforge-web-cli/Cargo.toml
+          # Update all workspace crates (replace version.workspace = true with version = "X.Y.Z")
+          sed -i 's/^version\.workspace = true$/version = "'"$VERSION"'"/' crates/nestforge-web-core/Cargo.toml
+          sed -i 's/^version\.workspace = true$/version = "'"$VERSION"'"/' crates/nestforge-web/Cargo.toml
+          sed -i 's/^version\.workspace = true$/version = "'"$VERSION"'"/' crates/nestforge-web-cli/Cargo.toml
 
       - name: Replace path deps with version deps for publishing
         run: |
