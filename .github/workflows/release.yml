@@ -43,15 +43,11 @@ jobs:
           MAJOR=false
           MINOR=false
           PATCH=false
-          BREAKING=false
           
           while IFS= read -r line; do
-            # Check for breaking changes
             if [[ "$line" == *"BREAKING"* ]] || [[ "$line" =~ \!: ]]; then
-              BREAKING=true
               MAJOR=true
             fi
-            
             if [[ "$line" =~ ^feat ]] || [[ "$line" =~ ^refactor ]] || [[ "$line" =~ ^perf ]]; then
               MINOR=true
             elif [[ "$line" =~ ^fix ]] || [[ "$line" =~ ^docs ]] || [[ "$line" =~ ^test ]] || [[ "$line" =~ ^build ]] || [[ "$line" =~ ^ci ]]; then
@@ -59,11 +55,9 @@ jobs:
             fi
           done <<< "$COMMITS"
           
-          echo "has_breaking=$BREAKING" >> $GITHUB_OUTPUT
           echo "has_minor=$MINOR" >> $GITHUB_OUTPUT
           echo "has_patch=$PATCH" >> $GITHUB_OUTPUT
           
-          # Calculate new version
           CURRENT="${LAST_TAG#v}"
           IFS='.' read -r major minor patch <<< "$CURRENT"
           
@@ -81,139 +75,65 @@ jobs:
           NEW_VERSION="$major.$minor.$patch"
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
 
-      - name: Print release info
-        run: |
-          echo "Last release: ${{ steps.last_tag.outputs.last_tag }}"
-          echo "New version: v${{ steps.analyze.outputs.new_version }}"
-          echo "Breaking: ${{ steps.analyze.outputs.has_breaking }}"
-          echo "Features: ${{ steps.analyze.outputs.has_minor }}"
-          echo "Fixes: ${{ steps.analyze.outputs.has_patch }}"
-
-      - name: Cache cargo registry
-        uses: actions/cache@v4
-        with:
-          path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: Cache cargo index
-        uses: actions/cache@v4
-        with:
-          path: ~/.cargo/git
-          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: Cache cargo build
-        uses: actions/cache@v4
-        with:
-          path: target
-          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: Set up Cargo config
-        run: |
-          mkdir -p ~/.cargo
-          cat >> ~/.cargo/config.toml << 'EOF'
-          [ registries ]
-          crates-io = { index = "sparse+https://index.crates.io/" }
-          EOF
-
-      - name: Update versions
+      - name: Update workspace version
         run: |
           VERSION="${{ steps.analyze.outputs.new_version }}"
-          sed -i "s/^version = \".*\"/version = \"$VERSION\"/" Cargo.toml
-          sed -i "s/^version = \".*\"/version = \"$VERSION\"/" crates/nestforge-web-core/Cargo.toml
-          sed -i "s/^version = \".*\"/version = \"$VERSION\"/" crates/nestforge-web/Cargo.toml
-          sed -i "s/^version = \".*\"/version = \"$VERSION\"/" crates/nestforge-web-cli/Cargo.toml
+          sed -i 's/^version = ".*"/version = "'"$VERSION"'"/' Cargo.toml
+          sed -i 's/^version = ".*"/version = "'"$VERSION"'"/' crates/nestforge-web-core/Cargo.toml
+          sed -i 's/^version = ".*"/version = "'"$VERSION"'"/' crates/nestforge-web/Cargo.toml
+          sed -i 's/^version = ".*"/version = "'"$VERSION"'"/' crates/nestforge-web-cli/Cargo.toml
 
-      - name: Generate changelog
-        id: changelog
+      - name: Replace path deps with version deps for publishing
         run: |
-          LAST_TAG="${{ steps.last_tag.outputs.last_tag }}"
-          VERSION="v${{ steps.analyze.outputs.new_version }}"
+          VERSION="${{ steps.analyze.outputs.new_version }}"
           
-          # Collect commits grouped by type
-          FEATS=$(git log --format="  - %s" $LAST_TAG..HEAD | grep "^  - feat" || echo "")
-          FIXES=$(git log --format="  - %s" $LAST_TAG..HEAD | grep "^  - fix" || echo "")
-          DOCS=$(git log --format="  - %s" $LAST_TAG..HEAD | grep "^  - docs" || echo "")
-          REFACTOR=$(git log --format="  - %s" $LAST_TAG..HEAD | grep "^  - refactor" || echo "")
-          CI=$(git log --format="  - %s" $LAST_TAG..HEAD | grep "^  - ci" || echo "")
-          
-          # Build changelog
-          CHANGELOG=""
-          
-          if [[ -n "$FEATS" ]]; then
-            CHANGELOG+="### Features\n$FEATS\n\n"
-          fi
-          if [[ -n "$FIXES" ]]; then
-            CHANGELOG+="### Bug Fixes\n$FIXES\n\n"
-          fi
-          if [[ -n "$DOCS" ]]; then
-            CHANGELOG+="### Documentation\n$DOCS\n\n"
-          fi
-          if [[ -n "$REFACTOR" ]]; then
-            CHANGELOG+="### Refactoring\n$REFACTOR\n\n"
-          fi
-          if [[ -n "$CI" ]]; then
-            CHANGELOG+="### CI\n$CI\n\n"
-          fi
-          
-          echo "changelog<<EOF" >> $GITHUB_OUTPUT
-          echo "$CHANGELOG" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          # For nestforge-web: replace path with version
+          sed -i 's|nestforge-web-core = { path = "../nestforge-web-core" }|nestforge-web-core = "'"$VERSION"'" }|' crates/nestforge-web/Cargo.toml
+          sed -i 's|nestforge-web-core = { path = "../nestforge-web-core" }|nestforge-web-core = "'"$VERSION"'" }|' crates/nestforge-web-cli/Cargo.toml
 
-      - name: Update README with changelog
+      - name: Show updated files
         run: |
-          VERSION="v${{ steps.analyze.outputs.new_version }}"
-          DATE=$(date +%Y-%m-%d)
-          
-          # Create changelog entry
-          CHANGELOG_ENTRY="## [$VERSION] - $DATE"
-          CHANGELOG_ENTRY+="\n\n${{ steps.changelog.outputs.changelog }}"
-          
-          # Add changelog section before License
-          awk -v entry="$CHANGELOG_ENTRY" '
-            /^## License$/ { print entry; print "" }
-            { print }
-          ' README.md > README.md.new
-          
-          mv README.md.new README.md
-
-      - name: Show updated README
-        run: |
-          echo "=== Updated README (changelog section) ==="
-          grep -A 50 "^## \[v" README.md | head -60
-          echo "..."
-
-      - name: Commit version bump and changelog
-        run: |
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
-          git add -A
-          git commit -m "chore: release v${{ steps.analyze.outputs.new_version }}"
-
-      - name: Create tag
-        run: |
-          git tag v${{ steps.analyze.outputs.new_version }}
-          git push origin v${{ steps.analyze.outputs.new_version }}
+          echo "=== nestforge-web/Cargo.toml ==="
+          grep -A2 "nestforge-web-core" crates/nestforge-web/Cargo.toml || echo "Not found"
+          echo ""
+          echo "=== nestforge-web-cli/Cargo.toml ==="
+          grep -A2 "nestforge-web-core" crates/nestforge-web-cli/Cargo.toml || echo "Not found"
 
       - name: Run tests
         run: cargo test --workspace
 
       - name: Publish nestforge-web-core
         run: |
-          cargo publish --manifest-path=crates/nestforge-web-core/Cargo.toml --token "$CARGO_REGISTRY_TOKEN"
+          cargo publish -p nestforge-web-core
+
+      - name: Wait before next publish
+        run: sleep 15
 
       - name: Publish nestforge-web
         run: |
-          cargo publish --manifest-path=crates/nestforge-web/Cargo.toml --token "$CARGO_REGISTRY_TOKEN"
+          cargo publish -p nestforge-web
+
+      - name: Wait before next publish
+        run: sleep 15
 
       - name: Publish nestforge-web-cli
         run: |
-          cargo publish --manifest-path=crates/nestforge-web-cli/Cargo.toml --token "$CARGO_REGISTRY_TOKEN"
+          cargo publish -p nestforge-web-cli
+
+      - name: Create commit and tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "chore(release): ${{ steps.analyze.outputs.new_version }}"
+          git tag "v${{ steps.analyze.outputs.new_version }}"
+          git push origin HEAD:main
+          git push origin "v${{ steps.analyze.outputs.new_version }}"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           draft: false
-          generate_release_notes: true
           tag: v${{ steps.analyze.outputs.new_version }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
