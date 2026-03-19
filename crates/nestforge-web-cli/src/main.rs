@@ -24,6 +24,8 @@ enum Commands {
         app_dir: Option<PathBuf>,
         #[arg(short, long)]
         port: Option<u16>,
+        #[arg(long)]
+        host: Option<String>,
     },
     Build {
         #[arg(short, long)]
@@ -32,6 +34,8 @@ enum Commands {
     Start {
         #[arg(short, long)]
         port: Option<u16>,
+        #[arg(long)]
+        host: Option<String>,
     },
 }
 
@@ -50,14 +54,14 @@ async fn main() -> Result<()> {
             tracing::info!("Creating new NestForge Web project: {}", name);
             new_project(&name, &path)?;
         }
-        Commands::Dev { app_dir, port } => {
-            dev_server(app_dir, port).await?;
+        Commands::Dev { app_dir, port, host } => {
+            dev_server(app_dir, port, host).await?;
         }
         Commands::Build { app_dir } => {
             build_project(app_dir)?;
         }
-        Commands::Start { port } => {
-            start_server(port).await?;
+        Commands::Start { port, host } => {
+            start_server(port, host).await?;
         }
     }
 
@@ -96,6 +100,7 @@ fn new_project(name: &str, path: &PathBuf) -> Result<()> {
 
     let app_port = std::env::var("PORT").unwrap_or_else(|_| "3000".to_string());
     let http_port = std::env::var("HTTP_PORT").unwrap_or_else(|_| "3001".to_string());
+    let host = std::env::var("HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
     
     std::fs::write(
         project_dir.join("nestforge-web.config.ts"),
@@ -105,11 +110,11 @@ fn new_project(name: &str, path: &PathBuf) -> Result<()> {
   backendDir: "./src/backend",
   port: process.env.PORT || {},
   httpPort: process.env.HTTP_PORT || {},
-  host: process.env.HOST || "127.0.0.1",
+  host: process.env.HOST || "{}",
 }};
 
 export default config;
-"#, name, app_port, http_port),
+"#, name, app_port, http_port, host),
     )?;
 
     std::fs::write(
@@ -121,8 +126,8 @@ export default config;
 PORT={}
 HTTP_PORT={}
 
-# Server host
-HOST=127.0.0.1
+# Server host/IP (use 0.0.0.0 for external access)
+HOST={}
 
 # Environment
 NODE_ENV=development
@@ -132,7 +137,7 @@ BACKEND_PORT={}
 
 # Database (if using)
 DATABASE_URL=
-"#, app_port, http_port, http_port),
+"#, app_port, http_port, host, http_port),
     )?;
 
     std::fs::create_dir_all(project_dir.join("src/app"))?;
@@ -208,24 +213,26 @@ async fn main() -> anyhow::Result<()> {
         .parse()
         .unwrap_or(3000);
     
+    let http_port: u16 = env::var("HTTP_PORT")
+        .unwrap_or_else(|_| "3001".to_string())
+        .parse()
+        .unwrap_or(3001);
+    
     let host = env::var("HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
     
-    let config = NestForgeWebConfig {
-        app_name: env::var("APP_NAME").unwrap_or_else(|_| "nestforge-app".to_string()),
+    let config = NestForgeWebConfig {{
+        app_name: env::var("APP_NAME").unwrap_or_else(|_| "{}".to_string()),
         app_dir: env::var("APP_DIR").unwrap_or_else(|_| "src/app".to_string()),
         backend_dir: env::var("BACKEND_DIR").unwrap_or_else(|_| "src/backend".to_string()),
         port,
-        http_port: env::var("HTTP_PORT")
-            .unwrap_or_else(|_| "3001".to_string())
-            .parse()
-            .unwrap_or(3001),
+        http_port,
         host,
-    };
+    }};
     
     let app = NestForgeWebApp::new(config);
     app.listen().await
-}
-"#,
+}}
+"#, name),
     )?;
 
     std::fs::write(
@@ -241,18 +248,18 @@ pub use config::NestForgeWebConfig;
 use std::env;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct NestForgeWebConfig {
+pub struct NestForgeWebConfig {{
     pub app_name: String,
     pub app_dir: String,
     pub backend_dir: String,
     pub port: u16,
     pub http_port: u16,
     pub host: String,
-}
+}}
 
-impl Default for NestForgeWebConfig {
-    fn default() -> Self {
-        Self {
+impl Default for NestForgeWebConfig {{
+    fn default() -> Self {{
+        Self {{
             app_name: env::var("APP_NAME").unwrap_or_else(|_| "nestforge-app".to_string()),
             app_dir: env::var("APP_DIR").unwrap_or_else(|_| "src/app".to_string()),
             backend_dir: env::var("BACKEND_DIR").unwrap_or_else(|_| "src/backend".to_string()),
@@ -265,9 +272,9 @@ impl Default for NestForgeWebConfig {
                 .parse()
                 .unwrap_or(3001),
             host: env::var("HOST").unwrap_or_else(|_| "127.0.0.1".to_string()),
-        }
-    }
-}
+        }}
+    }}
+}}
 "#,
     )?;
 
@@ -312,13 +319,41 @@ A NestForge Web project.
 
 ## Getting Started
 
-1. Copy `.env.example` to `.env.local` and customize your settings
+1. Copy `.env.example` to `.env.local` and customize your settings:
+
+```bash
+cp .env.example .env.local
+```
+
 2. Run the development server:
 
 ```bash
 cargo run --bin server
 # or
 nestforge-web dev
+```
+
+## Configuration
+
+### Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PORT` | `3000` | Application server port |
+| `HTTP_PORT` | `3001` | HTTP API server port |
+| `HOST` | `127.0.0.1` | Server bind address (use `0.0.0.0` for external access) |
+| `APP_NAME` | `nestforge-app` | Application name |
+| `APP_DIR` | `src/app` | Frontend source directory |
+| `BACKEND_DIR` | `src/backend` | Backend source directory |
+
+### CLI Options
+
+```bash
+# Start dev server with custom port and host
+nestforge-web dev --port 8080 --host 0.0.0.0
+
+# Start production server
+nestforge-web start --port 3000 --host 0.0.0.0
 ```
 
 ## Project Structure
@@ -330,22 +365,10 @@ src/
 ├── components/    # React components
 └── lib/           # Shared utilities
 ```
-
-## Environment Variables
-
-See `.env.example` for available configuration options.
 "#, name),
     )?;
 
-    std::fs::write(
-        project_dir.join(".github"),
-        r#""#,
-    )?;
-
-    std::fs::write(
-        project_dir.join(".github/workflows"),
-        r#""#,
-    )?;
+    std::fs::create_dir_all(project_dir.join(".github/workflows"))?;
 
     std::fs::write(
         project_dir.join(".github/workflows/ci.yml"),
@@ -390,7 +413,7 @@ jobs:
     Ok(())
 }
 
-async fn dev_server(app_dir: Option<PathBuf>, port: Option<u16>) -> Result<()> {
+async fn dev_server(app_dir: Option<PathBuf>, port: Option<u16>, host_cli: Option<String>) -> Result<()> {
     use nestforge_web_core::{NestForgeWebApp, NestForgeWebConfig};
     
     dotenvy::dotenv().ok();
@@ -399,13 +422,16 @@ async fn dev_server(app_dir: Option<PathBuf>, port: Option<u16>) -> Result<()> {
         .or_else(|| env::var("PORT").ok().and_then(|p| p.parse().ok()))
         .unwrap_or(3000);
     
+    let resolved_host = host_cli
+        .or_else(|| env::var("HOST").ok());
+    
     let resolved_app_dir = app_dir
         .map(|p| p.to_string_lossy().to_string())
         .unwrap_or_else(|| env::var("APP_DIR").unwrap_or_else(|_| "src/app".to_string()));
     
-    let host = env::var("HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
+    let host = resolved_host.unwrap_or_else(|| "127.0.0.1".to_string());
     
-    tracing::info!("Starting dev server on port {}", resolved_port);
+    tracing::info!("Starting dev server on {}:{}", host, resolved_port);
     
     let config = NestForgeWebConfig {
         app_name: env::var("APP_NAME").unwrap_or_else(|_| "nestforge-dev".to_string()),
@@ -435,7 +461,7 @@ fn build_project(app_dir: Option<PathBuf>) -> Result<()> {
     Ok(())
 }
 
-async fn start_server(port: Option<u16>) -> Result<()> {
+async fn start_server(port: Option<u16>, host_cli: Option<String>) -> Result<()> {
     use nestforge_web_core::{NestForgeWebApp, NestForgeWebConfig};
     
     dotenvy::dotenv().ok();
@@ -444,9 +470,12 @@ async fn start_server(port: Option<u16>) -> Result<()> {
         .or_else(|| env::var("PORT").ok().and_then(|p| p.parse().ok()))
         .unwrap_or(3000);
     
-    let host = env::var("HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
+    let resolved_host = host_cli
+        .or_else(|| env::var("HOST").ok());
     
-    tracing::info!("Starting production server on port {}", resolved_port);
+    let host = resolved_host.unwrap_or_else(|| "127.0.0.1".to_string());
+    
+    tracing::info!("Starting production server on {}:{}", host, resolved_port);
     
     let config = NestForgeWebConfig {
         app_name: env::var("APP_NAME").unwrap_or_else(|_| "nestforge-app".to_string()),
