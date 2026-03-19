@@ -64,6 +64,32 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
+fn init_git_repo(project_dir: &PathBuf) -> anyhow::Result<()> {
+    let repo = git2::Repository::init(project_dir)?;
+    
+    let mut index = repo.index()?;
+    index.add_all(["*"].iter(), git2::IndexAddOption::DEFAULT, None)?;
+    index.write()?;
+    
+    let tree_id = index.write_tree()?;
+    let tree = repo.find_tree(tree_id)?;
+    
+    let signature = git2::Signature::now("NestForge Web", "nestforge@web.dev")
+        .unwrap_or_else(|_| git2::Signature::now("User", "user@example.com").unwrap());
+    
+    repo.commit(
+        Some("HEAD"),
+        &signature,
+        &signature,
+        "Initial commit: NestForge Web project",
+        &tree,
+        &[],
+    )?;
+    
+    tracing::info!("Git repository initialized with initial commit");
+    Ok(())
+}
+
 fn new_project(name: &str, path: &PathBuf) -> Result<()> {
     let project_dir = path.join(name);
     std::fs::create_dir_all(&project_dir)?;
@@ -87,7 +113,7 @@ export default config;
     )?;
 
     std::fs::write(
-        project_dir.join(".env.local"),
+        project_dir.join(".env.example"),
         format!(r#"# NestForge Web Environment Configuration
 # Copy this file to .env.local and customize values
 
@@ -189,6 +215,10 @@ async fn main() -> anyhow::Result<()> {
         app_dir: env::var("APP_DIR").unwrap_or_else(|_| "src/app".to_string()),
         backend_dir: env::var("BACKEND_DIR").unwrap_or_else(|_| "src/backend".to_string()),
         port,
+        http_port: env::var("HTTP_PORT")
+            .unwrap_or_else(|_| "3001".to_string())
+            .parse()
+            .unwrap_or(3001),
         host,
     };
     
@@ -216,6 +246,7 @@ pub struct NestForgeWebConfig {
     pub app_dir: String,
     pub backend_dir: String,
     pub port: u16,
+    pub http_port: u16,
     pub host: String,
 }
 
@@ -229,6 +260,10 @@ impl Default for NestForgeWebConfig {
                 .unwrap_or_else(|_| "3000".to_string())
                 .parse()
                 .unwrap_or(3000),
+            http_port: env::var("HTTP_PORT")
+                .unwrap_or_else(|_| "3001".to_string())
+                .parse()
+                .unwrap_or(3001),
             host: env::var("HOST").unwrap_or_else(|_| "127.0.0.1".to_string()),
         }
     }
@@ -269,8 +304,89 @@ Cargo.lock
 "#,
     )?;
 
+    std::fs::write(
+        project_dir.join("README.md"),
+        format!(r#"# {}
+
+A NestForge Web project.
+
+## Getting Started
+
+1. Copy `.env.example` to `.env.local` and customize your settings
+2. Run the development server:
+
+```bash
+cargo run --bin server
+# or
+nestforge-web dev
+```
+
+## Project Structure
+
+```
+src/
+├── app/           # Frontend pages and API routes
+├── backend/       # NestForge backend modules
+├── components/    # React components
+└── lib/           # Shared utilities
+```
+
+## Environment Variables
+
+See `.env.example` for available configuration options.
+"#, name),
+    )?;
+
+    std::fs::write(
+        project_dir.join(".github"),
+        r#""#,
+    )?;
+
+    std::fs::write(
+        project_dir.join(".github/workflows"),
+        r#""#,
+    )?;
+
+    std::fs::write(
+        project_dir.join(".github/workflows/ci.yml"),
+        r#"name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust
+        uses: dtolnay/rust-action@stable
+        with:
+          targets: wasm32-unknown-unknown
+      
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+      
+      - name: Run tests
+        run: cargo test --workspace
+      
+      - name: Build
+        run: cargo build --release
+"#,
+    )?;
+
+    if let Err(e) = init_git_repo(&project_dir) {
+        tracing::warn!("Failed to initialize git repository: {}. You can manually run 'git init' in the project directory.", e);
+    }
+
     tracing::info!("Project created at {}", project_dir.display());
-    tracing::info!("Copy .env.local to customize your ports and environment");
+    tracing::info!("Git repository initialized with initial commit");
+    tracing::info!("Run 'cp .env.example .env.local' to configure environment");
     Ok(())
 }
 
@@ -296,6 +412,10 @@ async fn dev_server(app_dir: Option<PathBuf>, port: Option<u16>) -> Result<()> {
         app_dir: resolved_app_dir,
         backend_dir: env::var("BACKEND_DIR").unwrap_or_else(|_| "src/backend".to_string()),
         port: resolved_port,
+        http_port: env::var("HTTP_PORT")
+            .unwrap_or_else(|_| "3001".to_string())
+            .parse()
+            .unwrap_or(3001),
         host,
     };
     
@@ -333,6 +453,10 @@ async fn start_server(port: Option<u16>) -> Result<()> {
         app_dir: env::var("APP_DIR").unwrap_or_else(|_| "src/app".to_string()),
         backend_dir: env::var("BACKEND_DIR").unwrap_or_else(|_| "src/backend".to_string()),
         port: resolved_port,
+        http_port: env::var("HTTP_PORT")
+            .unwrap_or_else(|_| "3001".to_string())
+            .parse()
+            .unwrap_or(3001),
         host,
     };
     
