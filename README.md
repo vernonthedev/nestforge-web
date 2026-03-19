@@ -85,40 +85,12 @@ my-app/
 
 ## Implementation Plan
 
-### Phase 1: Core Foundation
-
-- [ ] Define unified project structure (frontend + Rust backend)
-- [ ] Create `nestforge-web` CLI tool
-- [ ] Implement file-based routing scanner
-- [ ] Build SSR renderer integration with Axum
-
-### Phase 2: Frontend Backend Bridge
-
-- [ ] Create typed client generation from NestForge controllers
-- [ ] Implement API route handler that delegates to NestForge
-- [ ] Add request/response serialization layer
-- [ ] Build shared types crate for frontend/backend
-
-### Phase 3: Rendering Modes
-
-- [ ] Implement server-side rendering (SSR)
-- [ ] Add static site generation (SSG)
-- [ ] Implement incremental static regeneration (ISR)
-- [ ] Add streaming SSR support
-
 ### Phase 4: Developer Experience
 
 - [ ] Hot module replacement (HMR) integration
 - [ ] Type-safe API with generated types
 - [ ] OpenAPI docs auto-generation
 - [ ] VS Code extension integration
-
-### Phase 5: Performance & Scale
-
-- [ ] Edge deployment support
-- [ ] WASM compilation target
-- [ ] Streaming responses
-- [ ] Server actions
 
 ## Tech Stack
 
