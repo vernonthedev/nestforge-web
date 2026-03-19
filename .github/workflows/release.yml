@@ -195,7 +195,7 @@ jobs:
           git push origin v${{ steps.analyze.outputs.new_version }}
 
       - name: Run tests
-        run: cargo test --workspace --locked
+        run: cargo test --workspace
 
       - name: Publish nestforge-web-core
         run: |
