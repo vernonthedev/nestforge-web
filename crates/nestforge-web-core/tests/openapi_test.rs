@@ -222,7 +222,6 @@ mod tests {
 
         // Verify it's valid JSON
         let _: serde_json::Value = serde_json::from_str(&json).unwrap();
-        assert!(true);
     }
 
     #[test]
