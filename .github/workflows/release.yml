@@ -103,9 +103,9 @@ jobs:
       - name: Replace path deps with version deps for publishing
         run: |
           VERSION="${{ steps.analyze.outputs.new_version }}"
-          # Replace path dependencies with version dependencies
-          sed -i 's|nestforge-web-core = { path = "../nestforge-web-core" }|nestforge-web-core = "'"$VERSION"'" }|' crates/nestforge-web/Cargo.toml
-          sed -i 's|nestforge-web-core = { path = "../nestforge-web-core" }|nestforge-web-core = "'"$VERSION"'" }|' crates/nestforge-web-cli/Cargo.toml
+          # Replace path dependencies with version only (remove path = "..." and closing brace)
+          sed -i 's|nestforge-web-core = { path = "../nestforge-web-core" }|nestforge-web-core = "'"$VERSION"'"|g' crates/nestforge-web/Cargo.toml
+          sed -i 's|nestforge-web-core = { path = "../nestforge-web-core" }|nestforge-web-core = "'"$VERSION"'"|g' crates/nestforge-web-cli/Cargo.toml
 
       - name: Show updated files
         run: |
