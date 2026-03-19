@@ -31,13 +31,27 @@ jobs:
       - name: Get last release tag
         id: last_tag
         run: |
-          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
           echo "last_tag=$LAST_TAG" >> $GITHUB_OUTPUT
 
       - name: Analyze commits since last release
         id: analyze
         run: |
           LAST_TAG="${{ steps.last_tag.outputs.last_tag }}"
+          
+          if [[ -z "$LAST_TAG" ]]; then
+            # First release - extract version from commit message
+            COMMIT_MSG="${{ github.event.head_commit.message }}"
+            if [[ "$COMMIT_MSG" =~ release:\ ?v?([0-9]+\.[0-9]+\.[0-9]+) ]]; then
+              NEW_VERSION="${BASH_REMATCH[1]}"
+            else
+              NEW_VERSION="0.1.0"
+            fi
+            echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+            echo "is_first_release=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
           COMMITS=$(git log --format="%s%n%b" $LAST_TAG..HEAD 2>/dev/null || echo "")
           
           MAJOR=false
@@ -74,24 +88,24 @@ jobs:
           
           NEW_VERSION="$major.$minor.$patch"
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "is_first_release=false" >> $GITHUB_OUTPUT
 
       - name: Update workspace version
         run: |
           VERSION="${{ steps.analyze.outputs.new_version }}"
           # Update root Cargo.toml
           sed -i 's/^version = ".*"/version = "'"$VERSION"'"/' Cargo.toml
-          # Update all workspace crates (replace version.workspace = true with version = "X.Y.Z")
-          sed -i 's/^version\.workspace = true$/version = "'"$VERSION"'"/' crates/nestforge-web-core/Cargo.toml
-          sed -i 's/^version\.workspace = true$/version = "'"$VERSION"'"/' crates/nestforge-web/Cargo.toml
-          sed -i 's/^version\.workspace = true$/version = "'"$VERSION"'"/' crates/nestforge-web-cli/Cargo.toml
+          # Update all workspace crates
+          for f in crates/nestforge-web-core/Cargo.toml crates/nestforge-web/Cargo.toml crates/nestforge-web-cli/Cargo.toml; do
+            sed -i 's/^version\.workspace = true$/version = "'"$VERSION"'"/' "$f"
+          done
 
       - name: Replace path deps with version deps for publishing
         run: |
           VERSION="${{ steps.analyze.outputs.new_version }}"
-          
-          # For nestforge-web: replace path with version (remove the closing })
-          sed -i 's|nestforge-web-core = { path = "../nestforge-web-core" }|nestforge-web-core = "'"$VERSION"'"|' crates/nestforge-web/Cargo.toml
-          sed -i 's|nestforge-web-core = { path = "../nestforge-web-core" }|nestforge-web-core = "'"$VERSION"'"|' crates/nestforge-web-cli/Cargo.toml
+          # Replace path dependencies with version dependencies
+          sed -i 's|nestforge-web-core = { path = "../nestforge-web-core" }|nestforge-web-core = "'"$VERSION"'" }|' crates/nestforge-web/Cargo.toml
+          sed -i 's|nestforge-web-core = { path = "../nestforge-web-core" }|nestforge-web-core = "'"$VERSION"'" }|' crates/nestforge-web-cli/Cargo.toml
 
       - name: Show updated files
         run: |
