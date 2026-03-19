@@ -1,15 +1,6 @@
-use once_cell::sync::Lazy;
-use regex::Regex;
 use std::path::{Path, PathBuf};
 
 use crate::routing::{Route, RouteMethod, RouteSegment};
-
-static DYNAMIC_SEGMENT_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"^\[(.+?)\]$").unwrap());
-
-static CATCH_ALL_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"^\[\.\.\.(.+?)\]$").unwrap());
-
-static OPTIONAL_CATCH_ALL_REGEX: Lazy<Regex> =
-    Lazy::new(|| Regex::new(r"^\[\[(.+?)\]\]$").unwrap());
 
 pub struct RouteScanner {
     base_path: PathBuf,
@@ -56,7 +47,7 @@ impl RouteScanner {
         }
 
         let mut entries: Vec<_> = std::fs::read_dir(path)?.collect::<Result<_, _>>()?;
-        entries.sort_by(|a, b| a.file_name().cmp(&b.file_name()));
+        entries.sort_by_key(|a| a.file_name());
 
         let mut new_segments = segments.to_vec();
 
@@ -134,7 +125,7 @@ impl RouteScanner {
         }
 
         let mut entries: Vec<_> = std::fs::read_dir(path)?.collect::<Result<_, _>>()?;
-        entries.sort_by(|a, b| a.file_name().cmp(&b.file_name()));
+        entries.sort_by_key(|a| a.file_name());
 
         let mut new_segments = segments.to_vec();
 
@@ -225,14 +216,14 @@ impl RouteScanner {
         if name.starts_with('[') && name.ends_with(']') {
             if name.starts_with("[[") && name.ends_with("]]") {
                 let inner = &name[2..name.len() - 2];
-                if inner.starts_with("...") {
-                    Some(RouteSegment::OptionalCatchAll(inner[3..].to_string()))
+                if let Some(stripped) = inner.strip_prefix("...") {
+                    Some(RouteSegment::OptionalCatchAll(stripped.to_string()))
                 } else {
                     Some(RouteSegment::Dynamic(inner.to_string()))
                 }
-            } else if name.contains("...") {
-                let inner = &name[1..name.len() - 1];
-                Some(RouteSegment::CatchAll(inner[3..].to_string()))
+            } else if let Some(inner) = name.strip_prefix('[').and_then(|s| s.strip_suffix("...]"))
+            {
+                Some(RouteSegment::CatchAll(inner.to_string()))
             } else {
                 let inner = &name[1..name.len() - 1];
                 Some(RouteSegment::Dynamic(inner.to_string()))
@@ -279,8 +270,7 @@ impl RouteScanner {
     pub fn sanitize_name(&self, path: &str) -> String {
         path.replace('/', "")
             .replace('-', "_")
-            .replace('[', "")
-            .replace(']', "")
+            .replace(['[', ']'], "")
             .replace("...", "")
     }
 }
