@@ -33,6 +33,37 @@ jobs:
             mv wiki/README.md wiki/Home.md
           fi
 
+      - name: Add header and footer to wiki pages
+        run: |
+          HEADER="> [!NOTE]
+          HEADER+="
+          HEADER+="This documentation is automatically synced from the [main repository](https://github.com/vernonthedev/nestforge-web)."
+          HEADER+="
+          HEADER+="
+          
+          FOOTER="
+          FOOTER+="---"
+          FOOTER+="
+          FOOTER+="*Maintained by the [NestForge team](https://github.com/vernonthedev).*"
+          FOOTER+="
+          FOOTER+="*See something wrong? [Edit this page](https://github.com/vernonthedev/nestforge-web/edit/main/docs/) on GitHub.*"
+          
+          for file in wiki/*.md; do
+            if [ -f "$file" ]; then
+              # Get filename without path
+              filename=$(basename "$file")
+              
+              # Create temp file with header, original content, and footer
+              temp_file=$(mktemp)
+              echo -e "$HEADER" > "$temp_file"
+              cat "$file" >> "$temp_file"
+              echo -e "$FOOTER" >> "$temp_file"
+              
+              # Replace original with temp file
+              mv "$temp_file" "$file"
+            fi
+          done
+
       - name: Commit and push wiki updates
         run: |
           cd wiki
