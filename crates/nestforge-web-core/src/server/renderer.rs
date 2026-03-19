@@ -1,6 +1,6 @@
 pub mod page;
 
-pub use page::{PageProps, PageMetadata};
+pub use page::{PageMetadata, PageProps};
 
 mod renderer_mod {
     use std::path::PathBuf;
@@ -23,7 +23,12 @@ mod renderer_mod {
             None
         }
 
-        pub async fn render_with_layout(&self, _path: &str, props: super::PageProps, _layout: &str) -> anyhow::Result<String> {
+        pub async fn render_with_layout(
+            &self,
+            _path: &str,
+            props: super::PageProps,
+            _layout: &str,
+        ) -> anyhow::Result<String> {
             self.render(_path, props).await
         }
 

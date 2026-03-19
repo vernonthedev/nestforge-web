@@ -1,5 +1,5 @@
-pub mod watcher;
 pub mod reload;
+pub mod watcher;
 
-pub use watcher::{ChangedFile, FileChangeKind, FileWatcher, HmrClient, HmrMessage, HmrServer};
 pub use reload::{HotReloader, ModuleReloader, ModuleState};
+pub use watcher::{ChangedFile, FileChangeKind, FileWatcher, HmrClient, HmrMessage, HmrServer};

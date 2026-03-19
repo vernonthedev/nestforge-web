@@ -47,13 +47,13 @@ impl NestForgeWebApp {
     pub async fn listen(&self) -> anyhow::Result<()> {
         let app = self.build().await?;
         let addr = format!("{}:{}", self.config.host, self.config.port);
-        
+
         tracing::info!("Starting NestForge Web server on {}", addr);
         tracing::info!("Server ready at http://{}", addr);
-        
+
         let listener = tokio::net::TcpListener::bind(&addr).await?;
         axum::serve(listener, app).await?;
-        
+
         Ok(())
     }
 }
@@ -67,7 +67,11 @@ async fn root_handler(State(state): State<AppState>) -> Response {
 
     match state.renderer.get_layout_for_path("/") {
         Some(layout) => {
-            match state.renderer.render_with_layout("/page.tsx", page_props, &layout).await {
+            match state
+                .renderer
+                .render_with_layout("/page.tsx", page_props, &layout)
+                .await
+            {
                 Ok(html) => Html(html).into_response(),
                 Err(_) => Html(get_default_html("Welcome to NestForge Web")).into_response(),
             }
@@ -109,10 +113,10 @@ pub async fn start_dev_server(config: NestForgeWebConfig) -> anyhow::Result<()> 
 
 pub async fn build_for_production(app_dir: &str) -> anyhow::Result<()> {
     tracing::info!("Building NestForge Web application...");
-    
+
     let dist_dir = format!("{}/.next", app_dir);
     std::fs::create_dir_all(&dist_dir)?;
-    
+
     tracing::info!("Build complete. Output: {}", dist_dir);
     Ok(())
 }

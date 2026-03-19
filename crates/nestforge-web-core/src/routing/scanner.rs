@@ -1,22 +1,15 @@
-use std::path::{Path, PathBuf};
-use regex::Regex;
 use once_cell::sync::Lazy;
+use regex::Regex;
+use std::path::{Path, PathBuf};
 
 use crate::routing::{Route, RouteMethod, RouteSegment};
 
-static DYNAMIC_SEGMENT_REGEX: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"^\[(.+?)\]$").unwrap()
-});
+static DYNAMIC_SEGMENT_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"^\[(.+?)\]$").unwrap());
 
-static CATCH_ALL_REGEX: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"^\[\.\.\.(.+?)\]$").unwrap()
-});
+static CATCH_ALL_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"^\[\.\.\.(.+?)\]$").unwrap());
 
-static OPTIONAL_CATCH_ALL_REGEX: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"^\[\[(.+?)\]\]$").unwrap()
-});
-
-
+static OPTIONAL_CATCH_ALL_REGEX: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"^\[\[(.+?)\]\]$").unwrap());
 
 pub struct RouteScanner {
     base_path: PathBuf,
@@ -32,19 +25,22 @@ impl RouteScanner {
     pub async fn scan(&self) -> anyhow::Result<Vec<Route>> {
         let mut routes = Vec::new();
         let base_path = Path::new(&self.base_path);
-        
+
         if !base_path.exists() {
-            tracing::info!("App directory does not exist, creating: {}", self.base_path.display());
+            tracing::info!(
+                "App directory does not exist, creating: {}",
+                self.base_path.display()
+            );
             std::fs::create_dir_all(base_path)?;
         }
-        
+
         self.scan_directory(base_path, &mut routes, "", &Vec::new())?;
-        
+
         tracing::info!("Scanned {} routes", routes.len());
         for route in &routes {
             tracing::debug!("Found route: {}", route);
         }
-        
+
         Ok(routes)
     }
 
@@ -78,14 +74,14 @@ impl RouteScanner {
                     if let Some(seg) = &segment {
                         new_segments.push(seg.clone());
                     }
-                    
+
                     let new_prefix = if prefix.is_empty() {
                         format!("/{}", file_name)
                     } else {
                         format!("{}/{}", prefix, file_name)
                     };
                     self.scan_directory(&file_path, routes, &new_prefix, &new_segments)?;
-                    
+
                     if segment.is_some() {
                         new_segments.pop();
                     }
@@ -94,7 +90,7 @@ impl RouteScanner {
                 if ext == "tsx" || ext == "ts" || ext == "jsx" || ext == "js" {
                     if let Some(stem) = file_path.file_stem() {
                         let stem_str = stem.to_string_lossy();
-                        
+
                         if stem_str == "page" {
                             let route_path = self.build_path(prefix, segments);
                             routes.push(Route {
@@ -107,7 +103,10 @@ impl RouteScanner {
                         } else if stem_str == "layout" {
                         } else if stem_str == "route" {
                             self.parse_route_file(&file_path, routes, prefix, segments)?;
-                        } else if stem_str == "loading" || stem_str == "error" || stem_str == "not-found" {
+                        } else if stem_str == "loading"
+                            || stem_str == "error"
+                            || stem_str == "not-found"
+                        {
                         }
                     }
                 }
@@ -124,8 +123,12 @@ impl RouteScanner {
         prefix: &str,
         segments: &[RouteSegment],
     ) -> anyhow::Result<()> {
-        let api_prefix = if prefix.is_empty() { "api".to_string() } else { format!("{}/api", prefix) };
-        
+        let api_prefix = if prefix.is_empty() {
+            "api".to_string()
+        } else {
+            format!("{}/api", prefix)
+        };
+
         if !path.is_dir() {
             return Ok(());
         }
@@ -144,10 +147,10 @@ impl RouteScanner {
                 if let Some(seg) = &segment {
                     new_segments.push(seg.clone());
                 }
-                
+
                 let new_prefix = format!("{}/{}", api_prefix, file_name);
                 self.scan_api_directory(&file_path, routes, &new_prefix, &new_segments)?;
-                
+
                 if segment.is_some() {
                     new_segments.pop();
                 }
@@ -174,7 +177,7 @@ impl RouteScanner {
     ) -> anyhow::Result<()> {
         let content = std::fs::read_to_string(path)?;
         let route_path = self.build_path(prefix, segments);
-        
+
         let methods = [
             ("GET", RouteMethod::Get),
             ("POST", RouteMethod::Post),
@@ -184,12 +187,14 @@ impl RouteScanner {
             ("OPTIONS", RouteMethod::Options),
             ("HEAD", RouteMethod::Head),
         ];
-        
+
         for (method_name, method) in methods {
-            if content.contains(&format!("export async function {}", method_name)) || 
-               content.contains(&format!("export function {}", method_name)) ||
-               (content.contains("export") && content.contains(method_name) && 
-                (content.contains("Request") || content.contains("Response"))) {
+            if content.contains(&format!("export async function {}", method_name))
+                || content.contains(&format!("export function {}", method_name))
+                || (content.contains("export")
+                    && content.contains(method_name)
+                    && (content.contains("Request") || content.contains("Response")))
+            {
                 routes.push(Route {
                     path: route_path.clone(),
                     method,
@@ -199,7 +204,7 @@ impl RouteScanner {
                 });
             }
         }
-        
+
         if routes.is_empty() && content.contains("export") {
             routes.push(Route {
                 path: route_path,
@@ -209,7 +214,7 @@ impl RouteScanner {
                 segments: segments.to_vec(),
             });
         }
-        
+
         Ok(())
     }
 
@@ -219,17 +224,17 @@ impl RouteScanner {
         }
         if name.starts_with('[') && name.ends_with(']') {
             if name.starts_with("[[") && name.ends_with("]]") {
-                let inner = &name[2..name.len()-2];
+                let inner = &name[2..name.len() - 2];
                 if inner.starts_with("...") {
                     Some(RouteSegment::OptionalCatchAll(inner[3..].to_string()))
                 } else {
                     Some(RouteSegment::Dynamic(inner.to_string()))
                 }
             } else if name.contains("...") {
-                let inner = &name[1..name.len()-1];
+                let inner = &name[1..name.len() - 1];
                 Some(RouteSegment::CatchAll(inner[3..].to_string()))
             } else {
-                let inner = &name[1..name.len()-1];
+                let inner = &name[1..name.len() - 1];
                 Some(RouteSegment::Dynamic(inner.to_string()))
             }
         } else {
@@ -239,7 +244,7 @@ impl RouteScanner {
 
     pub fn build_path(&self, prefix: &str, segments: &[RouteSegment]) -> String {
         let mut path = prefix.to_string();
-        
+
         for segment in segments {
             if !path.ends_with('/') {
                 path.push('/');
@@ -263,7 +268,7 @@ impl RouteScanner {
                 }
             }
         }
-        
+
         if path.is_empty() {
             path.push('/');
         }
@@ -287,20 +292,32 @@ mod tests {
     #[test]
     fn test_dynamic_segment() {
         let scanner = RouteScanner::new(".");
-        assert!(matches!(scanner.parse_segment("[id]"), Some(RouteSegment::Dynamic(_))));
-        assert!(matches!(scanner.parse_segment("[slug]"), Some(RouteSegment::Dynamic(_))));
+        assert!(matches!(
+            scanner.parse_segment("[id]"),
+            Some(RouteSegment::Dynamic(_))
+        ));
+        assert!(matches!(
+            scanner.parse_segment("[slug]"),
+            Some(RouteSegment::Dynamic(_))
+        ));
     }
 
     #[test]
     fn test_catch_all_segment() {
         let scanner = RouteScanner::new(".");
-        assert!(matches!(scanner.parse_segment("[...slug]"), Some(RouteSegment::CatchAll(_))));
+        assert!(matches!(
+            scanner.parse_segment("[...slug]"),
+            Some(RouteSegment::CatchAll(_))
+        ));
     }
 
     #[test]
     fn test_optional_catch_all_segment() {
         let scanner = RouteScanner::new(".");
-        assert!(matches!(scanner.parse_segment("[[...slug]]"), Some(RouteSegment::OptionalCatchAll(_))));
+        assert!(matches!(
+            scanner.parse_segment("[[...slug]]"),
+            Some(RouteSegment::OptionalCatchAll(_))
+        ));
     }
 
     #[test]

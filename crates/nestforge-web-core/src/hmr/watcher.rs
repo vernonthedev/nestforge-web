@@ -1,8 +1,8 @@
+use notify::{Event, EventKind, RecursiveMode, Watcher};
+use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use notify::{Watcher, RecursiveMode, Event, EventKind};
-use serde::{Deserialize, Serialize};
 
 pub struct FileWatcher {
     watcher: notify::RecommendedWatcher,
@@ -12,16 +12,15 @@ pub struct FileWatcher {
 
 impl FileWatcher {
     pub fn new(debounce_ms: u64) -> anyhow::Result<Self> {
-        let watcher = notify::recommended_watcher(move |res: Result<Event, notify::Error>| {
-            match res {
+        let watcher =
+            notify::recommended_watcher(move |res: Result<Event, notify::Error>| match res {
                 Ok(event) => {
                     tracing::debug!("File event: {:?}", event);
                 }
                 Err(e) => {
                     tracing::error!("Watch error: {:?}", e);
                 }
-            }
-        })?;
+            })?;
 
         Ok(Self {
             watcher,
@@ -89,7 +88,7 @@ impl HmrServer {
     pub async fn notify_change(&self, files: Vec<ChangedFile>) {
         let message = HmrMessage::Reload { files };
         let connections = self.connections.write().await;
-        
+
         for tx in connections.iter() {
             let _ = tx.try_send(message.clone());
         }
@@ -97,7 +96,7 @@ impl HmrServer {
 
     pub async fn broadcast_message(&self, message: HmrMessage) {
         let connections = self.connections.write().await;
-        
+
         for tx in connections.iter() {
             let _ = tx.try_send(message.clone());
         }
@@ -178,6 +177,7 @@ impl HmrClient {
     connect();
     window.__hmrClient = ws;
 })();
-"#.to_string()
+"#
+        .to_string()
     }
 }

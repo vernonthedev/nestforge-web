@@ -7,8 +7,8 @@ use axum::{
 };
 use std::sync::Arc;
 
-use crate::openapi::spec::OpenApiSpec;
 use crate::config::NestForgeWebConfig;
+use crate::openapi::spec::OpenApiSpec;
 
 pub struct SwaggerUi {
     spec: OpenApiSpec,

@@ -15,7 +15,7 @@ jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
-    if: contains(github.event.head_commit.message, 'release:')
+    if: startsWith(github.event.head_commit.message, 'release:')
     
     steps:
       - name: Checkout code
@@ -47,14 +47,14 @@ jobs:
           
           while IFS= read -r line; do
             # Check for breaking changes
-            if [[ "$line" =~ BREAKING ]] || [[ "$line" =~ \!\: ]]; then
+            if [[ "$line" == *"BREAKING"* ]] || [[ "$line" =~ \!: ]]; then
               BREAKING=true
               MAJOR=true
             fi
             
-            if [[ "$line" =~ ^feat(\([^)]+\))?\ : ]] || [[ "$line" =~ ^refactor(\([^)]+\))?\ : ]] || [[ "$line" =~ ^perf(\([^)]+\))?\ : ]]; then
+            if [[ "$line" =~ ^feat ]] || [[ "$line" =~ ^refactor ]] || [[ "$line" =~ ^perf ]]; then
               MINOR=true
-            elif [[ "$line" =~ ^fix(\([^)]+\))?\ : ]] || [[ "$line" =~ ^docs(\([^)]+\))?\ : ]] || [[ "$line" =~ ^test(\([^)]+\))?\ : ]] || [[ "$line" =~ ^build(\([^)]+\))?\ : ]] || [[ "$line" =~ ^ci(\([^)]+\))?\ : ]]; then
+            elif [[ "$line" =~ ^fix ]] || [[ "$line" =~ ^docs ]] || [[ "$line" =~ ^test ]] || [[ "$line" =~ ^build ]] || [[ "$line" =~ ^ci ]]; then
               PATCH=true
             fi
           done <<< "$COMMITS"
@@ -130,12 +130,11 @@ jobs:
           VERSION="v${{ steps.analyze.outputs.new_version }}"
           
           # Collect commits grouped by type
-          FEATS=$(git log --format="  - %s" $LAST_TAG..HEAD | grep -E "^\s+- feat" | sed 's/^/- /' || echo "")
-          FIXES=$(git log --format="  - %s" $LAST_TAG..HEAD | grep -E "^\s+- fix" | sed 's/^/- /' || echo "")
-          DOCS=$(git log --format="  - %s" $LAST_TAG..HEAD | grep -E "^\s+- docs" | sed 's/^/- /' || echo "")
-          REFACTOR=$(git log --format="  - %s" $LAST_TAG..HEAD | grep -E "^\s+- refactor" | sed 's/^/- /' || echo "")
-          CI=$(git log --format="  - %s" $LAST_TAG..HEAD | grep -E "^\s+- ci" | sed 's/^/- /' || echo "")
-          OTHER=$(git log --format="  - %s" $LAST_TAG..HEAD | grep -vE "^\s+- (feat|fix|docs|refactor|ci|chore|perf|test|build)" | sed 's/^/- /' || echo "")
+          FEATS=$(git log --format="  - %s" $LAST_TAG..HEAD | grep "^  - feat" || echo "")
+          FIXES=$(git log --format="  - %s" $LAST_TAG..HEAD | grep "^  - fix" || echo "")
+          DOCS=$(git log --format="  - %s" $LAST_TAG..HEAD | grep "^  - docs" || echo "")
+          REFACTOR=$(git log --format="  - %s" $LAST_TAG..HEAD | grep "^  - refactor" || echo "")
+          CI=$(git log --format="  - %s" $LAST_TAG..HEAD | grep "^  - ci" || echo "")
           
           # Build changelog
           CHANGELOG=""
@@ -155,11 +154,10 @@ jobs:
           if [[ -n "$CI" ]]; then
             CHANGELOG+="### CI\n$CI\n\n"
           fi
-          if [[ -n "$OTHER" ]]; then
-            CHANGELOG+="### Other Changes\n$OTHER\n\n"
-          fi
           
-          echo "changelog=$CHANGELOG" >> $GITHUB_OUTPUT
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGELOG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Update README with changelog
         run: |
@@ -167,32 +165,21 @@ jobs:
           DATE=$(date +%Y-%m-%d)
           
           # Create changelog entry
-          ENTRY="## [$VERSION] - $DATE\n\n${{ steps.changelog.outputs.changelog }}"
+          CHANGELOG_ENTRY="## [$VERSION] - $DATE"
+          CHANGELOG_ENTRY+="\n\n${{ steps.changelog.outputs.changelog }}"
           
-          # Read current README
-          README_CONTENT=$(cat README.md)
-          
-          # Check if CHANGELOG section exists
-          if grep -q "^## \[v" README.md; then
-            # Prepend to changelog section
-            awk -v entry="$ENTRY" '
-              /^## \[v/ { print entry; print "" }
-              { print }
-            ' README.md > README.md.new
-          else
-            # Add changelog section before License
-            awk -v entry="$ENTRY" '
-              /^## License$/ { print entry "\n"; print }
-              !/^## License$/ { print }
-            ' README.md > README.md.new
-          fi
+          # Add changelog section before License
+          awk -v entry="$CHANGELOG_ENTRY" '
+            /^## License$/ { print entry; print "" }
+            { print }
+          ' README.md > README.md.new
           
           mv README.md.new README.md
 
       - name: Show updated README
         run: |
           echo "=== Updated README (changelog section) ==="
-          grep -A 50 "^## \[v" README.md | head -60 || grep -A 50 "^## Changelog" README.md | head -60
+          grep -A 50 "^## \[v" README.md | head -60
           echo "..."
 
       - name: Commit version bump and changelog

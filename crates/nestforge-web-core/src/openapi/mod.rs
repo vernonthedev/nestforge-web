@@ -1,6 +1,6 @@
-pub mod spec;
 pub mod generator;
+pub mod spec;
 pub mod ui;
 
-pub use spec::*;
 pub use generator::OpenApiGenerator;
+pub use spec::*;
