@@ -60,10 +60,10 @@ jobs:
         run: cargo validate-workspace
 
       - name: Build
-        run: cargo build --workspace --locked
+        run: cargo build --workspace
 
       - name: Run tests
-        run: cargo test --workspace --locked
+        run: cargo test --workspace
 
   rust-version:
     name: Minimum Rust Version
@@ -76,7 +76,7 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: 1.85.0
+          toolchain: 1.87.0
 
       - name: Build with minimum version
         run: cargo build --workspace
