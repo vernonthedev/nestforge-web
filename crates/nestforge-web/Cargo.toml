@@ -10,7 +10,7 @@ description.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-nfw-core = { path = "../nfw-core" }
+nfw-core = "0.1.1"
 
 [features]
 default = []

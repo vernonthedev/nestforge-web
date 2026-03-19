@@ -14,7 +14,7 @@ name = "nestforge-web"
 path = "src/main.rs"
 
 [dependencies]
-nfw-core = { path = "../nfw-core" }
+nfw-core = "0.1.1"
 tokio.workspace = true
 clap.workspace = true
 anyhow.workspace = true
