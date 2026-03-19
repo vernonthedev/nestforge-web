@@ -221,9 +221,13 @@ impl RouteScanner {
                 } else {
                     Some(RouteSegment::Dynamic(inner.to_string()))
                 }
-            } else if let Some(inner) = name.strip_prefix('[').and_then(|s| s.strip_suffix("...]"))
-            {
-                Some(RouteSegment::CatchAll(inner.to_string()))
+            } else if name.contains("...") {
+                let inner = &name[1..name.len() - 1];
+                if let Some(stripped) = inner.strip_prefix("...") {
+                    Some(RouteSegment::CatchAll(stripped.to_string()))
+                } else {
+                    Some(RouteSegment::Dynamic(inner.to_string()))
+                }
             } else {
                 let inner = &name[1..name.len() - 1];
                 Some(RouteSegment::Dynamic(inner.to_string()))
