@@ -1,11 +1,15 @@
 use serde::{Deserialize, Serialize};
 
+use super::scanner::RouteSegment;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Route {
     pub path: String,
     pub method: RouteMethod,
     pub file_path: String,
     pub handler_name: String,
+    #[serde(default)]
+    pub segments: Vec<RouteSegment>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
