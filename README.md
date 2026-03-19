@@ -159,10 +159,7 @@ nestforge-web docs          # Open API documentation
 
 ## Documentation
 
-- Main Documentation: https://nestforge-web.dev
-- NestForge Docs: https://nestforge.suredoc.net
 - Wiki: https://github.com/vernonthedev/nestforge-web/wiki
 
-## License
-
-Apache-2.0
+> [!Important]
+> Developed with love by @vernonthedev.
