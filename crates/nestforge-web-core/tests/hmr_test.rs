@@ -49,7 +49,6 @@ mod tests {
     fn test_hot_reloader_new() {
         let routes = vec![];
         let _reloader = HotReloader::new(routes);
-        assert!(true); // Should not panic
     }
 
     #[test]
