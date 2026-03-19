@@ -38,23 +38,28 @@ jobs:
         id: analyze
         run: |
           LAST_TAG="${{ steps.last_tag.outputs.last_tag }}"
-          COMMITS=$(git log --format=%s $LAST_TAG..HEAD 2>/dev/null || echo "")
+          COMMITS=$(git log --format="%s%n%b" $LAST_TAG..HEAD 2>/dev/null || echo "")
           
           MAJOR=false
           MINOR=false
           PATCH=false
+          BREAKING=false
           
-          while IFS= read -r commit; do
-            if [[ "$commit" =~ ^.*\!:\ ]] || [[ "$commit" =~ ^feat\(.*\)\!:\ ]] || [[ "$commit" =~ ^fix\(.*\)\!:\ ]]; then
+          while IFS= read -r line; do
+            # Check for breaking changes
+            if [[ "$line" =~ BREAKING ]] || [[ "$line" =~ \!\: ]]; then
+              BREAKING=true
               MAJOR=true
-            elif [[ "$commit" =~ ^feat(\([^)]+\))?:\ ]] || [[ "$commit" =~ ^refactor(\([^)]+\))?:\ ]] || [[ "$commit" =~ ^perf(\([^)]+\))?:\ ]]; then
+            fi
+            
+            if [[ "$line" =~ ^feat(\([^)]+\))?\ : ]] || [[ "$line" =~ ^refactor(\([^)]+\))?\ : ]] || [[ "$line" =~ ^perf(\([^)]+\))?\ : ]]; then
               MINOR=true
-            elif [[ "$commit" =~ ^fix(\([^)]+\))?:\ ]] || [[ "$commit" =~ ^docs(\([^)]+\))?:\ ]] || [[ "$commit" =~ ^test(\([^)]+\))?:\ ]] || [[ "$commit" =~ ^build(\([^)]+\))?:\ ]] || [[ "$commit" =~ ^ci(\([^)]+\))?:\ ]]; then
+            elif [[ "$line" =~ ^fix(\([^)]+\))?\ : ]] || [[ "$line" =~ ^docs(\([^)]+\))?\ : ]] || [[ "$line" =~ ^test(\([^)]+\))?\ : ]] || [[ "$line" =~ ^build(\([^)]+\))?\ : ]] || [[ "$line" =~ ^ci(\([^)]+\))?\ : ]]; then
               PATCH=true
             fi
           done <<< "$COMMITS"
           
-          echo "has_major=$MAJOR" >> $GITHUB_OUTPUT
+          echo "has_breaking=$BREAKING" >> $GITHUB_OUTPUT
           echo "has_minor=$MINOR" >> $GITHUB_OUTPUT
           echo "has_patch=$PATCH" >> $GITHUB_OUTPUT
           
@@ -80,7 +85,7 @@ jobs:
         run: |
           echo "Last release: ${{ steps.last_tag.outputs.last_tag }}"
           echo "New version: v${{ steps.analyze.outputs.new_version }}"
-          echo "Breaking changes: ${{ steps.analyze.outputs.has_major }}"
+          echo "Breaking: ${{ steps.analyze.outputs.has_breaking }}"
           echo "Features: ${{ steps.analyze.outputs.has_minor }}"
           echo "Fixes: ${{ steps.analyze.outputs.has_patch }}"
 
@@ -119,33 +124,88 @@ jobs:
           sed -i "s/^version = \".*\"/version = \"$VERSION\"/" crates/nestforge-web-cli/Cargo.toml
 
       - name: Generate changelog
+        id: changelog
         run: |
           LAST_TAG="${{ steps.last_tag.outputs.last_tag }}"
-          {
-            echo "# Changelog"
-            echo ""
-            echo "## v${{ steps.analyze.outputs.new_version }}"
-            echo ""
-            git log --format="### %s" $LAST_TAG..HEAD | grep -E "^(feat|fix|docs|test|build|ci|perf|refactor|chore|revert)" || echo "Initial release"
-          } > CHANGELOG.md
+          VERSION="v${{ steps.analyze.outputs.new_version }}"
+          
+          # Collect commits grouped by type
+          FEATS=$(git log --format="  - %s" $LAST_TAG..HEAD | grep -E "^\s+- feat" | sed 's/^/- /' || echo "")
+          FIXES=$(git log --format="  - %s" $LAST_TAG..HEAD | grep -E "^\s+- fix" | sed 's/^/- /' || echo "")
+          DOCS=$(git log --format="  - %s" $LAST_TAG..HEAD | grep -E "^\s+- docs" | sed 's/^/- /' || echo "")
+          REFACTOR=$(git log --format="  - %s" $LAST_TAG..HEAD | grep -E "^\s+- refactor" | sed 's/^/- /' || echo "")
+          CI=$(git log --format="  - %s" $LAST_TAG..HEAD | grep -E "^\s+- ci" | sed 's/^/- /' || echo "")
+          OTHER=$(git log --format="  - %s" $LAST_TAG..HEAD | grep -vE "^\s+- (feat|fix|docs|refactor|ci|chore|perf|test|build)" | sed 's/^/- /' || echo "")
+          
+          # Build changelog
+          CHANGELOG=""
+          
+          if [[ -n "$FEATS" ]]; then
+            CHANGELOG+="### Features\n$FEATS\n\n"
+          fi
+          if [[ -n "$FIXES" ]]; then
+            CHANGELOG+="### Bug Fixes\n$FIXES\n\n"
+          fi
+          if [[ -n "$DOCS" ]]; then
+            CHANGELOG+="### Documentation\n$DOCS\n\n"
+          fi
+          if [[ -n "$REFACTOR" ]]; then
+            CHANGELOG+="### Refactoring\n$REFACTOR\n\n"
+          fi
+          if [[ -n "$CI" ]]; then
+            CHANGELOG+="### CI\n$CI\n\n"
+          fi
+          if [[ -n "$OTHER" ]]; then
+            CHANGELOG+="### Other Changes\n$OTHER\n\n"
+          fi
+          
+          echo "changelog=$CHANGELOG" >> $GITHUB_OUTPUT
 
-      - name: Show changelog
+      - name: Update README with changelog
         run: |
-          echo "=== Generated Changelog ==="
-          cat CHANGELOG.md
-          echo "==========================="
+          VERSION="v${{ steps.analyze.outputs.new_version }}"
+          DATE=$(date +%Y-%m-%d)
+          
+          # Create changelog entry
+          ENTRY="## [$VERSION] - $DATE\n\n${{ steps.changelog.outputs.changelog }}"
+          
+          # Read current README
+          README_CONTENT=$(cat README.md)
+          
+          # Check if CHANGELOG section exists
+          if grep -q "^## \[v" README.md; then
+            # Prepend to changelog section
+            awk -v entry="$ENTRY" '
+              /^## \[v/ { print entry; print "" }
+              { print }
+            ' README.md > README.md.new
+          else
+            # Add changelog section before License
+            awk -v entry="$ENTRY" '
+              /^## License$/ { print entry "\n"; print }
+              !/^## License$/ { print }
+            ' README.md > README.md.new
+          fi
+          
+          mv README.md.new README.md
 
-      - name: Commit version bump
+      - name: Show updated README
+        run: |
+          echo "=== Updated README (changelog section) ==="
+          grep -A 50 "^## \[v" README.md | head -60 || grep -A 50 "^## Changelog" README.md | head -60
+          echo "..."
+
+      - name: Commit version bump and changelog
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
           git add -A
-          git commit --amend --no-edit || true
+          git commit -m "chore: release v${{ steps.analyze.outputs.new_version }}"
 
       - name: Create tag
         run: |
           git tag v${{ steps.analyze.outputs.new_version }}
-          git push origin v${{ steps.analyze.outputs.new_version }} || true
+          git push origin v${{ steps.analyze.outputs.new_version }}
 
       - name: Run tests
         run: cargo test --workspace --locked
@@ -166,7 +226,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           draft: false
-          body_path: CHANGELOG.md
+          generate_release_notes: true
           tag: v${{ steps.analyze.outputs.new_version }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
