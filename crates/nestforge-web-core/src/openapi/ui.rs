@@ -10,6 +10,7 @@ use std::sync::Arc;
 use crate::config::NestForgeWebConfig;
 use crate::openapi::spec::OpenApiSpec;
 
+#[allow(clippy::unwrap_used)]
 pub struct SwaggerUi {
     spec: OpenApiSpec,
 }

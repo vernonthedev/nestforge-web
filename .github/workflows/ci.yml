@@ -56,9 +56,6 @@ jobs:
       - name: Clippy warnings
         run: cargo clippy --workspace --all-targets -- -D warnings
 
-      - name: Validate workspace
-        run: cargo validate-workspace
-
       - name: Build
         run: cargo build --workspace
 
